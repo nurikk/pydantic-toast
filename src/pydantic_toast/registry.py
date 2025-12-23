@@ -15,7 +15,7 @@ class BackendRegistry:
     """
 
     def __init__(self) -> None:
-        self._backends: dict[str, type["StorageBackend"]] = {}
+        self._backends: dict[str, type[StorageBackend]] = {}
 
     def register(self, scheme: str, backend_class: type["StorageBackend"]) -> None:
         """Register a backend class for a URL scheme.
@@ -91,3 +91,26 @@ def register_backend(scheme: str, backend_class: type["StorageBackend"]) -> None
     """
     registry = get_global_registry()
     registry.register(scheme, backend_class)
+
+
+def _register_builtin_backends() -> None:
+    """Register built-in backends if their dependencies are available."""
+    registry = get_global_registry()
+
+    try:
+        from pydantic_toast.backends.postgresql import PostgreSQLBackend
+
+        registry.register("postgresql", PostgreSQLBackend)
+        registry.register("postgres", PostgreSQLBackend)
+    except ImportError:
+        pass
+
+    try:
+        from pydantic_toast.backends.redis import RedisBackend
+
+        registry.register("redis", RedisBackend)
+    except ImportError:
+        pass
+
+
+_register_builtin_backends()

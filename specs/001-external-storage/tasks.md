@@ -81,17 +81,17 @@
 
 ### Tests for User Story 2
 
-- [ ] T019 [P] [US2] Test model_dump returns class_name and id format in tests/test_base_model.py
-- [ ] T020 [P] [US2] Test model_dump generates UUID on first call in tests/test_base_model.py
-- [ ] T021 [P] [US2] Test model_dump returns same id on repeated calls in tests/test_base_model.py
-- [ ] T022 [P] [US2] Test model_dump_json returns JSON string of reference in tests/test_base_model.py
+- [x] T019 [P] [US2] Test model_dump returns class_name and id format in tests/test_base_model.py
+- [x] T020 [P] [US2] Test model_dump generates UUID on first call in tests/test_base_model.py
+- [x] T021 [P] [US2] Test model_dump returns same id on repeated calls in tests/test_base_model.py
+- [x] T022 [P] [US2] Test model_dump_json returns JSON string of reference in tests/test_base_model.py
 
 ### Implementation for User Story 2
 
-- [ ] T023 [US2] Override model_dump() to generate UUID and persist data in src/pydantic_toast/base.py
-- [ ] T024 [US2] Override model_dump_json() to return JSON reference in src/pydantic_toast/base.py
-- [ ] T025 [US2] Implement _persist_to_storage() async helper in src/pydantic_toast/base.py
-- [ ] T026 [US2] Add schema_version, created_at, updated_at to stored data in src/pydantic_toast/base.py
+- [x] T023 [US2] Override model_dump() to generate UUID and persist data in src/pydantic_toast/base.py
+- [x] T024 [US2] Override model_dump_json() to return JSON reference in src/pydantic_toast/base.py
+- [x] T025 [US2] Implement _persist_to_storage() async helper in src/pydantic_toast/base.py
+- [x] T026 [US2] Add schema_version, created_at, updated_at to stored data in src/pydantic_toast/base.py
 
 **Checkpoint**: User Story 2 complete - can serialize models to external references
 
@@ -105,17 +105,17 @@
 
 ### Tests for User Story 3
 
-- [ ] T027 [P] [US3] Test model_validate restores full model from reference in tests/test_base_model.py
-- [ ] T028 [P] [US3] Test model_validate_json restores from JSON reference in tests/test_base_model.py
-- [ ] T029 [P] [US3] Test RecordNotFoundError for nonexistent UUID in tests/test_base_model.py
-- [ ] T030 [P] [US3] Test StorageValidationError for class_name mismatch in tests/test_base_model.py
+- [x] T027 [P] [US3] Test model_validate restores full model from reference in tests/test_base_model.py
+- [x] T028 [P] [US3] Test model_validate_json restores from JSON reference in tests/test_base_model.py
+- [x] T029 [P] [US3] Test RecordNotFoundError for nonexistent UUID in tests/test_base_model.py
+- [x] T030 [P] [US3] Test StorageValidationError for class_name mismatch in tests/test_base_model.py
 
 ### Implementation for User Story 3
 
-- [ ] T031 [US3] Add model_validator(mode='before') to detect external references in src/pydantic_toast/base.py
-- [ ] T032 [US3] Implement _is_external_reference() helper in src/pydantic_toast/base.py
-- [ ] T033 [US3] Implement _fetch_from_storage() async helper in src/pydantic_toast/base.py
-- [ ] T034 [US3] Add class_name validation during restore in src/pydantic_toast/base.py
+- [x] T031 [US3] Add model_validator(mode='before') to detect external references in src/pydantic_toast/base.py
+- [x] T032 [US3] Implement _is_external_reference() helper in src/pydantic_toast/base.py
+- [x] T033 [US3] Implement _fetch_from_storage() async helper in src/pydantic_toast/base.py
+- [x] T034 [US3] Add class_name validation during restore in src/pydantic_toast/base.py
 
 **Checkpoint**: User Story 3 complete - full round-trip serialization works
 
@@ -137,13 +137,13 @@
 
 ### Implementation for User Story 4
 
-- [ ] T040 [US4] Create PostgreSQLBackend class in src/pydantic_toast/backends/postgresql.py
-- [ ] T041 [US4] Implement connect() with asyncpg.create_pool() in src/pydantic_toast/backends/postgresql.py
-- [ ] T042 [US4] Implement disconnect() to close pool in src/pydantic_toast/backends/postgresql.py
-- [ ] T043 [US4] Implement save() with UPSERT query in src/pydantic_toast/backends/postgresql.py
-- [ ] T044 [US4] Implement load() with SELECT query in src/pydantic_toast/backends/postgresql.py
-- [ ] T045 [US4] Implement ensure_table() to create schema on first connect in src/pydantic_toast/backends/postgresql.py
-- [ ] T046 [US4] Register postgresql:// and postgres:// schemes in src/pydantic_toast/backends/__init__.py
+- [x] T040 [US4] Create PostgreSQLBackend class in src/pydantic_toast/backends/postgresql.py
+- [x] T041 [US4] Implement connect() with asyncpg.create_pool() in src/pydantic_toast/backends/postgresql.py
+- [x] T042 [US4] Implement disconnect() to close pool in src/pydantic_toast/backends/postgresql.py
+- [x] T043 [US4] Implement save() with UPSERT query in src/pydantic_toast/backends/postgresql.py
+- [x] T044 [US4] Implement load() with SELECT query in src/pydantic_toast/backends/postgresql.py
+- [x] T045 [US4] Implement ensure_table() to create schema on first connect in src/pydantic_toast/backends/postgresql.py
+- [x] T046 [US4] Register postgresql:// and postgres:// schemes in src/pydantic_toast/backends/__init__.py
 
 **Checkpoint**: User Story 4 complete - PostgreSQL storage backend works
 
@@ -165,13 +165,13 @@
 
 ### Implementation for User Story 5
 
-- [ ] T052 [US5] Create RedisBackend class in src/pydantic_toast/backends/redis.py
-- [ ] T053 [US5] Implement connect() with redis.asyncio.from_url() in src/pydantic_toast/backends/redis.py
-- [ ] T054 [US5] Implement disconnect() to close client in src/pydantic_toast/backends/redis.py
-- [ ] T055 [US5] Implement save() with JSON serialization in src/pydantic_toast/backends/redis.py
-- [ ] T056 [US5] Implement load() with JSON deserialization in src/pydantic_toast/backends/redis.py
-- [ ] T057 [US5] Implement _make_key() helper for consistent key format in src/pydantic_toast/backends/redis.py
-- [ ] T058 [US5] Register redis:// scheme in src/pydantic_toast/backends/__init__.py
+- [x] T052 [US5] Create RedisBackend class in src/pydantic_toast/backends/redis.py
+- [x] T053 [US5] Implement connect() with redis.asyncio.from_url() in src/pydantic_toast/backends/redis.py
+- [x] T054 [US5] Implement disconnect() to close client in src/pydantic_toast/backends/redis.py
+- [x] T055 [US5] Implement save() with JSON serialization in src/pydantic_toast/backends/redis.py
+- [x] T056 [US5] Implement load() with JSON deserialization in src/pydantic_toast/backends/redis.py
+- [x] T057 [US5] Implement _make_key() helper for consistent key format in src/pydantic_toast/backends/redis.py
+- [x] T058 [US5] Register redis:// scheme in src/pydantic_toast/backends/__init__.py
 
 **Checkpoint**: User Story 5 complete - Redis storage backend works
 
@@ -192,9 +192,9 @@
 
 ### Implementation for User Story 6
 
-- [ ] T063 [US6] Add register_backend() function to public API in src/pydantic_toast/__init__.py
-- [ ] T064 [US6] Export StorageBackend ABC for subclassing in src/pydantic_toast/__init__.py
-- [ ] T065 [US6] Add docstring with custom backend example in src/pydantic_toast/backends/base.py
+- [x] T063 [US6] Add register_backend() function to public API in src/pydantic_toast/__init__.py
+- [x] T064 [US6] Export StorageBackend ABC for subclassing in src/pydantic_toast/__init__.py
+- [x] T065 [US6] Add docstring with custom backend example in src/pydantic_toast/backends/base.py
 
 **Checkpoint**: User Story 6 complete - custom backends can be implemented and registered
 
@@ -204,13 +204,13 @@
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [ ] T066 [P] Add py.typed marker file in src/pydantic_toast/py.typed
-- [ ] T067 [P] Verify all public APIs have docstrings
-- [ ] T068 Run mypy --strict and fix any type errors
-- [ ] T069 Run ruff check and fix any lint errors
-- [ ] T070 Run ruff format on all source files
-- [ ] T071 Run full test suite with pytest
-- [ ] T072 Validate quickstart.md examples work correctly
+- [x] T066 [P] Add py.typed marker file in src/pydantic_toast/py.typed
+- [x] T067 [P] Verify all public APIs have docstrings
+- [x] T068 Run mypy --strict and fix any type errors
+- [x] T069 Run ruff check and fix any lint errors
+- [x] T070 Run ruff format on all source files
+- [x] T071 Run full test suite with pytest
+- [x] T072 Validate quickstart.md examples work correctly
 
 ---
 
