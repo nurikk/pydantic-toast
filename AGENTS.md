@@ -14,18 +14,25 @@ Auto-generated from all feature plans. Last updated: 2025-12-23
 ## Project Structure
 
 ```text
-backend/
-frontend/
-tests/
+src/pydantic_toast/    # Main package
+  backends/            # Storage backends (PostgreSQL, Redis, S3)
+tests/                 # Test files
+specs/                 # Feature specifications
 ```
 
 ## Commands
 
-# Add commands for 
+```bash
+just test              # Run tests with coverage (pytest --cov)
+just typecheck         # Run type checker (ty check)
+just format            # Format code (ruff check --fix && ruff format)
+just check             # Run format + typecheck + test
+just tag-bump [type]   # Bump git tag (major/minor/patch, default: patch)
+```
 
 ## Code Style
 
-: Follow standard conventions
+Follow standard Python conventions with ruff for formatting and type checking
 
 ## Recent Changes
 - 003-testcontainers: Added Python 3.13+ (as per pyproject.toml `requires-python = ">=3.13"`) + estcontainers[postgres,redis], asyncpg>=0.29.0, redis>=5.0.0, pytest>=8.0.0, pytest-asyncio>=0.23.0
