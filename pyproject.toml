@@ -19,7 +19,7 @@ dev = [
     "pytest-cov>=4.0.0",
     "testcontainers[postgres,redis,localstack]>=4.0.0",
     "ruff>=0.1.0",
-    "mypy>=1.7.0",
+    "ty>=0.0.1a1",
 ]
 
 [build-system]
@@ -43,21 +43,6 @@ ignore = ["S101", "A002", "ARG002"]  # Allow assert in tests, id parameter name,
 [tool.ruff.lint.per-file-ignores]
 "tests/**/*.py" = ["S101", "ARG"]  # Allow asserts and unused args in tests
 
-[tool.mypy]
-python_version = "3.13"
-strict = true
-warn_return_any = true
-warn_unused_configs = true
-disallow_untyped_defs = true
-disallow_any_generics = true
-check_untyped_defs = true
-no_implicit_optional = true
-warn_redundant_casts = true
-warn_unused_ignores = true
-warn_no_return = true
-warn_unreachable = true
-strict_equality = true
-
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
@@ -68,30 +53,6 @@ addopts = [
     "--strict-markers",
     "--tb=short",
 ]
-
-[[tool.mypy.overrides]]
-module = "asyncpg"
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = "redis.*"
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = "testcontainers.*"
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = "aiobotocore.*"
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = "botocore.*"
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = "boto3"
-ignore_missing_imports = true
 
 [tool.coverage.run]
 source = ["src/pydantic_toast"]

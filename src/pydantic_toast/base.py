@@ -132,7 +132,7 @@ class ExternalBaseModel(BaseModel):
             raise StorageValidationError("Storage URL not configured")
 
         data = await cls._fetch_from_storage(reference, storage_url)
-        instance = super().model_validate(data)
+        instance = cls.model_validate(data)
         instance._external_id = UUID(reference["id"])
         return instance
 

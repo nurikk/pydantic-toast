@@ -8,7 +8,7 @@ test test_file_or_dir="--durations=5 tests":
    uv run pytest --cov=src --cov-report term-missing:skip-covered {{test_file_or_dir}}
 
 typecheck:
-    uv run mypy src tests
+    uv run ty check src tests
 
 format:
     uv run ruff check --fix .
