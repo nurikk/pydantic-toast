@@ -52,7 +52,7 @@ def event_loop_policy() -> asyncio.AbstractEventLoopPolicy:
 
 
 @pytest.fixture(scope="function", autouse=True)
-async def clear_storage() -> AsyncGenerator[None, None]:
+async def clear_storage() -> AsyncGenerator[None]:
     """Clear in-memory storage before each test."""
     InMemoryBackend._storage.clear()
     yield
@@ -60,7 +60,7 @@ async def clear_storage() -> AsyncGenerator[None, None]:
 
 
 @pytest.fixture(scope="function")
-async def mock_storage() -> AsyncGenerator[dict[str, Any], None]:
+async def mock_storage() -> AsyncGenerator[dict[str, Any]]:
     """In-memory storage for testing without external dependencies."""
     storage: dict[str, Any] = {}
     yield storage

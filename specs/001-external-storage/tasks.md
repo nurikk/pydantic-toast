@@ -129,11 +129,11 @@
 
 ### Tests for User Story 4
 
-- [ ] T035 [P] [US4] Test PostgreSQLBackend connect creates pool in tests/test_postgresql.py
-- [ ] T036 [P] [US4] Test PostgreSQLBackend save stores data in tests/test_postgresql.py
-- [ ] T037 [P] [US4] Test PostgreSQLBackend load retrieves data in tests/test_postgresql.py
-- [ ] T038 [P] [US4] Test PostgreSQLBackend handles connection errors in tests/test_postgresql.py
-- [ ] T039 [P] [US4] Test full round-trip with PostgreSQL backend in tests/test_postgresql.py
+- [x] T035 [P] [US4] Test PostgreSQLBackend connect creates pool in tests/test_postgresql.py
+- [x] T036 [P] [US4] Test PostgreSQLBackend save stores data in tests/test_postgresql.py
+- [x] T037 [P] [US4] Test PostgreSQLBackend load retrieves data in tests/test_postgresql.py
+- [x] T038 [P] [US4] Test PostgreSQLBackend handles connection errors in tests/test_postgresql.py
+- [x] T039 [P] [US4] Test full round-trip with PostgreSQL backend in tests/test_postgresql.py
 
 ### Implementation for User Story 4
 
@@ -157,11 +157,11 @@
 
 ### Tests for User Story 5
 
-- [ ] T047 [P] [US5] Test RedisBackend connect creates client in tests/test_redis.py
-- [ ] T048 [P] [US5] Test RedisBackend save stores data in tests/test_redis.py
-- [ ] T049 [P] [US5] Test RedisBackend load retrieves data in tests/test_redis.py
-- [ ] T050 [P] [US5] Test RedisBackend key format is predictable in tests/test_redis.py
-- [ ] T051 [P] [US5] Test full round-trip with Redis backend in tests/test_redis.py
+- [x] T047 [P] [US5] Test RedisBackend connect creates client in tests/test_redis.py
+- [x] T048 [P] [US5] Test RedisBackend save stores data in tests/test_redis.py
+- [x] T049 [P] [US5] Test RedisBackend load retrieves data in tests/test_redis.py
+- [x] T050 [P] [US5] Test RedisBackend key format is predictable in tests/test_redis.py
+- [x] T051 [P] [US5] Test full round-trip with Redis backend in tests/test_redis.py
 
 ### Implementation for User Story 5
 
@@ -185,10 +185,10 @@
 
 ### Tests for User Story 6
 
-- [ ] T059 [P] [US6] Test register_backend adds custom scheme in tests/test_registry.py
-- [ ] T060 [P] [US6] Test register_backend rejects non-StorageBackend classes in tests/test_registry.py
-- [ ] T061 [P] [US6] Test custom backend works with ExternalBaseModel in tests/test_registry.py
-- [ ] T062 [P] [US6] Test unknown scheme raises StorageValidationError in tests/test_registry.py
+- [x] T059 [P] [US6] Test register_backend adds custom scheme in tests/test_registry.py
+- [x] T060 [P] [US6] Test register_backend rejects non-StorageBackend classes in tests/test_registry.py
+- [x] T061 [P] [US6] Test custom backend works with ExternalBaseModel in tests/test_registry.py
+- [x] T062 [P] [US6] Test unknown scheme raises StorageValidationError in tests/test_registry.py
 
 ### Implementation for User Story 6
 
