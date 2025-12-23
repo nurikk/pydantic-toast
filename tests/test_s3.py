@@ -6,7 +6,6 @@ from enum import Enum
 from uuid import UUID, uuid4
 
 import pytest
-
 from pydantic import BaseModel
 
 from pydantic_toast import ExternalBaseModel, ExternalConfigDict

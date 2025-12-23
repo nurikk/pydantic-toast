@@ -89,7 +89,7 @@ def check_docker_available() -> None:
 
 
 @pytest.fixture(scope="session")
-def postgres_container() -> Generator[PostgresContainer, None, None]:
+def postgres_container() -> Generator[PostgresContainer]:
     """Provide PostgreSQL 16 container for testing.
 
     Container is started once per test session and shared across all tests.
@@ -111,7 +111,7 @@ def postgres_url(postgres_container: PostgresContainer) -> str:
 
 
 @pytest.fixture(scope="session")
-def redis_container() -> Generator[RedisContainer, None, None]:
+def redis_container() -> Generator[RedisContainer]:
     """Provide Redis 7 container for testing.
 
     Container is started once per test session and shared across all tests.
@@ -131,7 +131,7 @@ def redis_url(redis_container: RedisContainer) -> str:
 
 
 @pytest.fixture(scope="session")
-def localstack_container() -> Generator[LocalStackContainer, None, None]:
+def localstack_container() -> Generator[LocalStackContainer]:
     """Provide LocalStack container for S3 testing.
 
     Container is started once per test session and shared across all tests.
