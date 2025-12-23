@@ -3,11 +3,11 @@
 import asyncio
 from collections.abc import Coroutine
 from datetime import UTC, datetime
-from typing import Any, TypedDict, TypeVar
+from typing import Any, Self, TypedDict, TypeVar
 from urllib.parse import urlparse
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, PrivateAttr
+from pydantic import BaseModel, ConfigDict, PrivateAttr
 
 from pydantic_toast.exceptions import RecordNotFoundError, StorageValidationError
 from pydantic_toast.registry import get_global_registry
@@ -22,7 +22,7 @@ class ExternalReference(TypedDict):
     id: str
 
 
-class ExternalConfigDict(TypedDict, total=False):
+class ExternalConfigDict(ConfigDict, total=False):
     """Configuration dictionary for external storage models.
 
     Extends Pydantic's ConfigDict with storage backend configuration.
@@ -202,7 +202,7 @@ class ExternalBaseModel(BaseModel):
         return _run_sync(self.save_external())
 
     @classmethod
-    async def load_external(cls, reference: ExternalReference) -> "ExternalBaseModel":
+    async def load_external(cls, reference: ExternalReference) -> Self:
         """Load model from external storage using reference (async).
 
         Restores a model instance from external storage using an external
@@ -240,7 +240,7 @@ class ExternalBaseModel(BaseModel):
         return instance
 
     @classmethod
-    def load_external_sync(cls, reference: ExternalReference) -> "ExternalBaseModel":
+    def load_external_sync(cls, reference: ExternalReference) -> Self:
         """Load model from external storage using reference (sync wrapper).
 
         Synchronous wrapper for load_external(). Use this when calling

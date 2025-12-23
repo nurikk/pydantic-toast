@@ -154,8 +154,7 @@ class BackendRegistry:
         """
         if not issubclass(backend_class, StorageBackend):
             raise TypeError(
-                f"backend_class must be a StorageBackend subclass, "
-                f"got {backend_class.__name__}"
+                f"backend_class must be a StorageBackend subclass, got {backend_class.__name__}"
             )
         self._backends[scheme] = backend_class
 

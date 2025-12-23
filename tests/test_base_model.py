@@ -8,6 +8,7 @@ from uuid import UUID, uuid4
 import pytest
 
 from pydantic_toast import ExternalBaseModel, ExternalConfigDict
+from pydantic_toast.base import ExternalReference
 from pydantic_toast.exceptions import RecordNotFoundError, StorageValidationError
 
 pytestmark = pytest.mark.usefixtures("register_test_backend")
@@ -39,7 +40,7 @@ def test_external_config_dict_raises_error_when_storage_missing() -> None:
 
         class TestModel(ExternalBaseModel):
             name: str
-            model_config = ExternalConfigDict()  # type: ignore[call-arg]
+            model_config = ExternalConfigDict()
 
 
 async def test_save_external_returns_class_name_and_id_format() -> None:
@@ -73,7 +74,7 @@ async def test_save_external_generates_uuid_on_first_call() -> None:
     result = await product.save_external()
 
     assert product._external_id is not None
-    assert result["id"] == str(product._external_id)
+    assert result["id"] == str(product._external_id)  # type: ignore[unreachable]
 
 
 async def test_save_external_returns_same_id_on_repeated_calls() -> None:
@@ -294,7 +295,10 @@ async def test_load_external_raises_not_found_for_invalid_id() -> None:
         content: str
         model_config = ExternalConfigDict(storage="test://memory")
 
-    ref = {"class_name": "Document", "id": "00000000-0000-0000-0000-000000000000"}
+    ref: ExternalReference = {
+        "class_name": "Document",
+        "id": "00000000-0000-0000-0000-000000000000",
+    }
 
     with pytest.raises(RecordNotFoundError):
         await Document.load_external(ref)
@@ -374,7 +378,10 @@ async def test_load_external_sync_raises_error_in_async_context() -> None:
         content: str
         model_config = ExternalConfigDict(storage="test://memory")
 
-    ref = {"class_name": "Document", "id": "550e8400-e29b-41d4-a716-446655440000"}
+    ref: ExternalReference = {
+        "class_name": "Document",
+        "id": "550e8400-e29b-41d4-a716-446655440000",
+    }
 
     with pytest.raises(RuntimeError, match="Cannot use sync storage methods inside async context"):
         Document.load_external_sync(ref)

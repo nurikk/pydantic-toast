@@ -1,5 +1,6 @@
 """Tests for PostgreSQL storage backend."""
 
+from collections.abc import AsyncGenerator
 from datetime import UTC, date, datetime, time, timedelta, timezone
 from decimal import Decimal
 from enum import Enum
@@ -13,7 +14,7 @@ from pydantic_toast.exceptions import StorageConnectionError
 
 
 @pytest.fixture
-async def postgres_backend(postgres_url: str) -> PostgreSQLBackend:
+async def postgres_backend(postgres_url: str) -> AsyncGenerator[PostgreSQLBackend]:
     """Create and connect a PostgreSQL backend for testing."""
     backend = PostgreSQLBackend(postgres_url)
     await backend.connect()
@@ -29,7 +30,7 @@ async def test_postgresql_backend_connect_creates_pool(postgres_url: str) -> Non
     await backend.connect()
     assert backend._pool is not None
 
-    await backend.disconnect()
+    await backend.disconnect()  # type: ignore[unreachable]
 
 
 async def test_postgresql_backend_save_stores_data(postgres_backend: PostgreSQLBackend) -> None:

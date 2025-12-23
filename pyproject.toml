@@ -89,6 +89,10 @@ ignore_missing_imports = true
 module = "botocore.*"
 ignore_missing_imports = true
 
+[[tool.mypy.overrides]]
+module = "boto3"
+ignore_missing_imports = true
+
 [tool.coverage.run]
 source = ["src/pydantic_toast"]
 branch = true

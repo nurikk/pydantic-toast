@@ -1,5 +1,6 @@
 """Tests for S3 storage backend."""
 
+from collections.abc import AsyncGenerator
 from datetime import UTC, date, datetime, time, timedelta, timezone
 from decimal import Decimal
 from enum import Enum
@@ -14,7 +15,7 @@ from pydantic_toast.exceptions import StorageConnectionError
 
 
 @pytest.fixture
-async def s3_backend(s3_url: str, s3_endpoint_url: str) -> S3Backend:
+async def s3_backend(s3_url: str, s3_endpoint_url: str) -> AsyncGenerator[S3Backend]:
     """Create and connect an S3 backend for testing."""
     backend = S3Backend(s3_url, endpoint_url=s3_endpoint_url)
     await backend.connect()
@@ -30,7 +31,7 @@ async def test_s3_backend_connect_creates_client(s3_url: str, s3_endpoint_url: s
     await backend.connect()
     assert backend._client is not None
 
-    await backend.disconnect()
+    await backend.disconnect()  # type: ignore[unreachable]
 
 
 async def test_s3_backend_save_stores_data(s3_backend: S3Backend) -> None:

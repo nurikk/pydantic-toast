@@ -175,4 +175,5 @@ def s3_url(localstack_container: LocalStackContainer) -> str:
 @pytest.fixture(scope="session")
 def s3_endpoint_url(localstack_container: LocalStackContainer) -> str:
     """Get LocalStack S3 endpoint URL for direct backend configuration."""
-    return localstack_container.get_url()
+    url: str = localstack_container.get_url()
+    return url

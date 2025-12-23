@@ -93,7 +93,7 @@ class PostgreSQLBackend(StorageBackend):
                     return None
                 data = row["data"]
                 if isinstance(data, str):
-                    return json.loads(data)
+                    return json.loads(data)  # type: ignore[no-any-return]
                 return dict(data)
         except Exception as e:
             raise ExternalStorageError(f"Failed to load record: {e}") from e

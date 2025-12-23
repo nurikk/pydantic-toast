@@ -1,5 +1,6 @@
 """Tests for Redis storage backend."""
 
+from collections.abc import AsyncGenerator
 from datetime import UTC, date, datetime, time, timedelta, timezone
 from decimal import Decimal
 from enum import Enum
@@ -13,7 +14,7 @@ from pydantic_toast.exceptions import StorageConnectionError
 
 
 @pytest.fixture
-async def redis_backend(redis_url: str) -> RedisBackend:
+async def redis_backend(redis_url: str) -> AsyncGenerator[RedisBackend]:
     """Create and connect a Redis backend for testing."""
     backend = RedisBackend(redis_url)
     await backend.connect()
@@ -31,7 +32,7 @@ async def test_redis_backend_connect_creates_client(redis_url: str) -> None:
     await backend.connect()
     assert backend._client is not None
 
-    await backend.disconnect()
+    await backend.disconnect()  # type: ignore[unreachable]
 
 
 async def test_redis_backend_save_stores_data(redis_backend: RedisBackend) -> None:
