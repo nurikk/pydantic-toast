@@ -171,7 +171,10 @@ class ExternalBaseModel(BaseModel):
             if stored_data is None:
                 raise RecordNotFoundError(id=external_id, class_name=class_name)
 
-            return stored_data.get("data", {})
+            data_value = stored_data.get("data", {})
+            if not isinstance(data_value, dict):
+                raise StorageValidationError(f"Expected dict for 'data', got {type(data_value)}")
+            return data_value
         finally:
             await backend.disconnect()
 

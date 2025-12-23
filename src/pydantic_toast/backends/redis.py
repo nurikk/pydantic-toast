@@ -1,5 +1,5 @@
 import json
-from typing import Any
+from typing import Any, cast
 from uuid import UUID
 
 from pydantic_toast.backends.base import StorageBackend
@@ -23,7 +23,7 @@ class RedisBackend(StorageBackend):
             ) from e
 
         try:
-            self._client = await aioredis.from_url(self._url)
+            self._client = await aioredis.from_url(self._url)  # type: ignore[no-untyped-call]
             await self._client.ping()
         except Exception as e:
             raise StorageConnectionError(
@@ -57,7 +57,7 @@ class RedisBackend(StorageBackend):
             value = await self._client.get(key)
             if value is None:
                 return None
-            return json.loads(value)
+            return cast(dict[str, Any], json.loads(value))
         except Exception as e:
             raise ExternalStorageError(f"Failed to load record: {e}") from e
 

@@ -4,11 +4,11 @@ set dotenv-load
 default:
     @just --list
 
-test test_file_or_dir="--durations=5 -n 4 tests":
+test test_file_or_dir="--durations=5 tests":
    uv run pytest --cov=src --cov-report term-missing:skip-covered {{test_file_or_dir}}
 
 typecheck:
-    uv run ty check
+    uv run mypy src tests
 
 format:
     uv run ruff check --fix .

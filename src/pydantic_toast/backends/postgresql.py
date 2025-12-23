@@ -1,7 +1,7 @@
 import json
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 from uuid import UUID
 
 from pydantic_toast.backends.base import StorageBackend
@@ -80,8 +80,8 @@ class PostgreSQLBackend(StorageBackend):
                     return None
                 data = row["data"]
                 if isinstance(data, str):
-                    return json.loads(data)
-                return dict(data)
+                    return cast(dict[str, Any], json.loads(data))
+                return cast(dict[str, Any], dict(data))
         except Exception as e:
             raise ExternalStorageError(f"Failed to load record: {e}") from e
 
