@@ -16,6 +16,7 @@ all = ["asyncpg>=0.29.0", "redis>=5.0.0", "aiobotocore>=3.0.0"]
 dev = [
     "pytest>=8.0.0",
     "pytest-asyncio>=0.23.0",
+    "pytest-cov>=4.0.0",
     "testcontainers[postgres,redis,localstack]>=4.0.0",
     "ruff>=0.1.0",
     "mypy>=1.7.0",
@@ -87,3 +88,16 @@ ignore_missing_imports = true
 [[tool.mypy.overrides]]
 module = "botocore.*"
 ignore_missing_imports = true
+
+[tool.coverage.run]
+source = ["src/pydantic_toast"]
+branch = true
+
+[tool.coverage.report]
+fail_under = 80
+show_missing = true
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+]
