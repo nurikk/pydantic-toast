@@ -25,11 +25,11 @@
 
 **Purpose**: Project initialization and basic structure
 
-- [ ] T001 Create project directory structure: `src/pydantic_toast/`, `src/pydantic_toast/backends/`, `tests/`
-- [ ] T002 Update pyproject.toml with dependencies: pydantic>=2.0.0, optional asyncpg>=0.29.0, redis>=5.0.0
-- [ ] T003 [P] Configure ruff for linting and formatting in pyproject.toml
-- [ ] T004 [P] Configure mypy --strict in pyproject.toml
-- [ ] T005 [P] Configure pytest and pytest-asyncio in pyproject.toml
+- [x] T001 Create project directory structure: `src/pydantic_toast/`, `src/pydantic_toast/backends/`, `tests/`
+- [x] T002 Update pyproject.toml with dependencies: pydantic>=2.0.0, optional asyncpg>=0.29.0, redis>=5.0.0
+- [x] T003 [P] Configure ruff for linting and formatting in pyproject.toml
+- [x] T004 [P] Configure mypy --strict in pyproject.toml
+- [x] T005 [P] Configure pytest and pytest-asyncio in pyproject.toml
 
 ---
 
@@ -39,11 +39,11 @@
 
 **CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T006 Create exception hierarchy in src/pydantic_toast/exceptions.py (ExternalStorageError, StorageConnectionError, RecordNotFoundError, StorageValidationError)
-- [ ] T007 Create StorageBackend ABC in src/pydantic_toast/backends/base.py (connect, disconnect, save, load methods)
-- [ ] T008 Create BackendRegistry in src/pydantic_toast/registry.py (register, create, schemes)
-- [ ] T009 Create test fixtures in tests/conftest.py (PostgreSQL and Redis test containers or local instances)
-- [ ] T010 [P] Create src/pydantic_toast/backends/__init__.py with public exports
+- [x] T006 Create exception hierarchy in src/pydantic_toast/exceptions.py (ExternalStorageError, StorageConnectionError, RecordNotFoundError, StorageValidationError)
+- [x] T007 Create StorageBackend ABC in src/pydantic_toast/backends/base.py (connect, disconnect, save, load methods)
+- [x] T008 Create BackendRegistry in src/pydantic_toast/registry.py (register, create, schemes)
+- [x] T009 Create test fixtures in tests/conftest.py (PostgreSQL and Redis test containers or local instances)
+- [x] T010 [P] Create src/pydantic_toast/backends/__init__.py with public exports
 
 **Checkpoint**: Foundation ready - user story implementation can now begin
 
@@ -57,17 +57,17 @@
 
 ### Tests for User Story 1
 
-- [ ] T011 [P] [US1] Test ExternalConfigDict creation with valid storage URL in tests/test_base_model.py
-- [ ] T012 [P] [US1] Test ExternalConfigDict raises error for invalid URL format in tests/test_base_model.py
-- [ ] T013 [P] [US1] Test ExternalConfigDict raises error when storage is missing in tests/test_base_model.py
+- [x] T011 [P] [US1] Test ExternalConfigDict creation with valid storage URL in tests/test_base_model.py
+- [x] T012 [P] [US1] Test ExternalConfigDict raises error for invalid URL format in tests/test_base_model.py
+- [x] T013 [P] [US1] Test ExternalConfigDict raises error when storage is missing in tests/test_base_model.py
 
 ### Implementation for User Story 1
 
-- [ ] T014 [US1] Create ExternalConfigDict TypedDict extending ConfigDict in src/pydantic_toast/base.py
-- [ ] T015 [US1] Create ExternalBaseModel class extending BaseModel in src/pydantic_toast/base.py
-- [ ] T016 [US1] Implement storage URL validation in ExternalBaseModel.__init_subclass__ in src/pydantic_toast/base.py
-- [ ] T017 [US1] Add _external_id PrivateAttr for UUID storage in src/pydantic_toast/base.py
-- [ ] T018 [US1] Create src/pydantic_toast/__init__.py with public API exports (ExternalBaseModel, ExternalConfigDict)
+- [x] T014 [US1] Create ExternalConfigDict TypedDict extending ConfigDict in src/pydantic_toast/base.py
+- [x] T015 [US1] Create ExternalBaseModel class extending BaseModel in src/pydantic_toast/base.py
+- [x] T016 [US1] Implement storage URL validation in ExternalBaseModel.__init_subclass__ in src/pydantic_toast/base.py
+- [x] T017 [US1] Add _external_id PrivateAttr for UUID storage in src/pydantic_toast/base.py
+- [x] T018 [US1] Create src/pydantic_toast/__init__.py with public API exports (ExternalBaseModel, ExternalConfigDict)
 
 **Checkpoint**: User Story 1 complete - can define external models with storage configuration
 
