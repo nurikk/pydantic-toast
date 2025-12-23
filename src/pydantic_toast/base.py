@@ -1,8 +1,9 @@
 """ExternalBaseModel and ExternalConfigDict for external storage."""
 
-import json
+import asyncio
+from collections.abc import Coroutine
 from datetime import UTC, datetime
-from typing import Any, TypedDict
+from typing import Any, TypedDict, TypeVar
 from urllib.parse import urlparse
 from uuid import UUID, uuid4
 
@@ -10,6 +11,15 @@ from pydantic import BaseModel, PrivateAttr
 
 from pydantic_toast.exceptions import RecordNotFoundError, StorageValidationError
 from pydantic_toast.registry import get_global_registry
+
+T = TypeVar("T")
+
+
+class ExternalReference(TypedDict):
+    """External reference format for stored models."""
+
+    class_name: str
+    id: str
 
 
 class ExternalConfigDict(TypedDict, total=False):
@@ -19,6 +29,32 @@ class ExternalConfigDict(TypedDict, total=False):
     """
 
     storage: str
+
+
+def _run_sync(coro: Coroutine[Any, Any, T]) -> T:
+    """Run coroutine synchronously with event loop detection.
+
+    Args:
+        coro: Coroutine to execute
+
+    Returns:
+        Result of the coroutine
+
+    Raises:
+        RuntimeError: If called from within an async context
+    """
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = None
+
+    if loop is not None:
+        raise RuntimeError(
+            "Cannot use sync storage methods inside async context. "
+            "Use the async version instead (e.g., 'await save_external()')."
+        )
+
+    return asyncio.run(coro)
 
 
 class ExternalBaseModel(BaseModel):
@@ -87,39 +123,6 @@ class ExternalBaseModel(BaseModel):
         else:
             self._storage_url = getattr(config, "storage", None)
 
-    @classmethod
-    async def model_validate(  # type: ignore[override]
-        cls, obj: Any, **kwargs: Any
-    ) -> "ExternalBaseModel":
-        """Validate object and restore from storage if it's an external reference."""
-        if cls._is_external_reference(obj):
-            storage_url: str | None = None
-            config = getattr(cls, "model_config", None)
-            # config can be dict or ConfigDict-like object
-            if hasattr(config, "get"):
-                storage_url = config.get("storage")  # type: ignore[union-attr]
-            else:
-                storage_url = getattr(config, "storage", None)
-
-            if storage_url is None:
-                raise StorageValidationError("Storage URL not configured")
-
-            data = await cls._fetch_from_storage(obj, storage_url)
-            instance = super().model_validate(data, **kwargs)
-            instance._external_id = UUID(obj["id"])
-            return instance
-        return super().model_validate(obj, **kwargs)
-
-    @classmethod
-    async def model_validate_json(  # type: ignore[override]
-        cls, json_data: str, **kwargs: Any
-    ) -> "ExternalBaseModel":
-        """Validate JSON string and restore from storage if it's an external reference."""
-        import json as json_module
-
-        obj = json_module.loads(json_data)
-        return await cls.model_validate(obj, **kwargs)
-
     @staticmethod
     def _is_external_reference(data: Any) -> bool:
         """Check if data is an external reference format."""
@@ -127,9 +130,143 @@ class ExternalBaseModel(BaseModel):
             return False
         return "class_name" in data and "id" in data and len(data) == 2
 
+    @staticmethod
+    def is_external_reference(data: Any) -> bool:
+        """Check if data is an external reference format.
+
+        Utility method to detect if a dictionary is an external reference
+        (has exactly "class_name" and "id" keys).
+
+        Args:
+            data: Any value to check
+
+        Returns:
+            True if data is external reference format, False otherwise
+
+        Example:
+            >>> ExternalBaseModel.is_external_reference({"class_name": "User", "id": "..."})
+            True
+            >>> ExternalBaseModel.is_external_reference({"name": "Alice"})
+            False
+        """
+        if not isinstance(data, dict):
+            return False
+        return "class_name" in data and "id" in data and len(data) == 2
+
+    async def save_external(self) -> ExternalReference:
+        """Persist model to external storage (async).
+
+        Saves the model data to the configured storage backend and returns
+        an external reference that can be used to restore the model later.
+
+        Returns:
+            ExternalReference: {"class_name": "...", "id": "..."} for restoration
+
+        Raises:
+            StorageConnectionError: If connection to backend fails
+            StorageValidationError: If storage URL not configured
+
+        Example:
+            >>> user = User(name="Alice", email="alice@example.com")
+            >>> ref = await user.save_external()
+            >>> print(ref)  # {"class_name": "User", "id": "550e8400-..."}
+        """
+        if self._external_id is None:
+            self._external_id = uuid4()
+
+        await self._persist_to_storage()
+
+        return {
+            "class_name": self.__class__.__name__,
+            "id": str(self._external_id),
+        }
+
+    def save_external_sync(self) -> ExternalReference:
+        """Persist model to external storage (sync wrapper).
+
+        Synchronous wrapper for save_external(). Use this when calling
+        from a non-async context.
+
+        Returns:
+            ExternalReference: {"class_name": "...", "id": "..."} for restoration
+
+        Raises:
+            RuntimeError: If called from within an async context
+            StorageConnectionError: If connection to backend fails
+            StorageValidationError: If storage URL not configured
+
+        Example:
+            >>> user = User(name="Alice", email="alice@example.com")
+            >>> ref = user.save_external_sync()  # No await needed
+        """
+        return _run_sync(self.save_external())
+
+    @classmethod
+    async def load_external(cls, reference: ExternalReference) -> "ExternalBaseModel":
+        """Load model from external storage using reference (async).
+
+        Restores a model instance from external storage using an external
+        reference previously obtained from save_external().
+
+        Args:
+            reference: External reference dict with class_name and id
+
+        Returns:
+            Restored model instance with all field values
+
+        Raises:
+            RecordNotFoundError: If no record exists with given id
+            StorageValidationError: If class_name doesn't match
+            StorageConnectionError: If connection to backend fails
+
+        Example:
+            >>> ref = {"class_name": "User", "id": "550e8400-..."}
+            >>> user = await User.load_external(ref)
+            >>> print(user.name)  # "Alice"
+        """
+        storage_url: str | None = None
+        config = getattr(cls, "model_config", None)
+        if hasattr(config, "get"):
+            storage_url = config.get("storage")  # type: ignore[union-attr]
+        else:
+            storage_url = getattr(config, "storage", None)
+
+        if storage_url is None:
+            raise StorageValidationError("Storage URL not configured")
+
+        data = await cls._fetch_from_storage(reference, storage_url)
+        instance = super().model_validate(data)
+        instance._external_id = UUID(reference["id"])
+        return instance
+
+    @classmethod
+    def load_external_sync(cls, reference: ExternalReference) -> "ExternalBaseModel":
+        """Load model from external storage using reference (sync wrapper).
+
+        Synchronous wrapper for load_external(). Use this when calling
+        from a non-async context.
+
+        Args:
+            reference: External reference dict with class_name and id
+
+        Returns:
+            Restored model instance with all field values
+
+        Raises:
+            RuntimeError: If called from within an async context
+            RecordNotFoundError: If no record exists with given id
+            StorageValidationError: If class_name doesn't match
+            StorageConnectionError: If connection to backend fails
+
+        Example:
+            >>> ref = {"class_name": "User", "id": "550e8400-..."}
+            >>> user = User.load_external_sync(ref)  # No await needed
+        """
+        return _run_sync(cls.load_external(reference))
+
     @classmethod
     async def _fetch_from_storage(
-        cls, reference: dict[str, Any], storage_url: str
+        cls, reference: ExternalReference, storage_url: str
     ) -> dict[str, Any]:
         """Fetch model data from storage using external reference."""
         class_name = reference.get("class_name")
@@ -163,34 +300,6 @@ class ExternalBaseModel(BaseModel):
             return data_field
         finally:
             await backend.disconnect()
-
-    async def model_dump(self, **kwargs: Any) -> dict[str, Any]:  # type: ignore[override]
-        """Dump model to external reference format.
-
-        Persists the model data to external storage and returns a lightweight
-        reference containing only the class name and ID.
-
-        Returns:
-            dict: External reference in format {"class_name": "...", "id": "..."}
-        """
-        if self._external_id is None:
-            self._external_id = uuid4()
-
-        await self._persist_to_storage()
-
-        return {
-            "class_name": self.__class__.__name__,
-            "id": str(self._external_id),
-        }
-
-    async def model_dump_json(self, **kwargs: Any) -> str:  # type: ignore[override]
-        """Dump model to external reference JSON string.
-
-        Returns:
-            str: JSON string of external reference
-        """
-        ref = await self.model_dump(**kwargs)
-        return json.dumps(ref)
 
     async def _persist_to_storage(self) -> None:
         """Persist model data to configured storage backend.

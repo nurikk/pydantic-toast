@@ -72,13 +72,13 @@ async def test_custom_backend_works_with_external_base_model() -> None:
         model_config = ExternalConfigDict(storage="mybackend://localhost/test")
 
     original = TestModel(name="test", value=42)
-    reference = await original.model_dump()
+    reference = await original.save_external()
 
     assert "class_name" in reference
     assert "id" in reference
     assert reference["class_name"] == "TestModel"
 
-    restored = await TestModel.model_validate(reference)
+    restored = await TestModel.load_external(reference)
     assert restored.name == "test"
     assert restored.value == 42
     assert str(restored._external_id) == reference["id"]

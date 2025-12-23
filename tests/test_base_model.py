@@ -35,8 +35,8 @@ def test_external_config_dict_raises_error_when_storage_missing() -> None:
             model_config = ExternalConfigDict()  # type: ignore[call-arg]
 
 
-async def test_model_dump_returns_class_name_and_id_format() -> None:
-    """Test model_dump returns class_name and id format."""
+async def test_save_external_returns_class_name_and_id_format() -> None:
+    """Test save_external returns class_name and id format."""
 
     class UserProfile(ExternalBaseModel):
         name: str
@@ -44,7 +44,7 @@ async def test_model_dump_returns_class_name_and_id_format() -> None:
         model_config = ExternalConfigDict(storage="postgresql://localhost:5432/test")
 
     user = UserProfile(name="Alice", email="alice@example.com")
-    result = await user.model_dump()
+    result = await user.save_external()
 
     assert "class_name" in result
     assert "id" in result
@@ -52,8 +52,8 @@ async def test_model_dump_returns_class_name_and_id_format() -> None:
     assert isinstance(result["id"], str)
 
 
-async def test_model_dump_generates_uuid_on_first_call() -> None:
-    """Test model_dump generates UUID on first call."""
+async def test_save_external_generates_uuid_on_first_call() -> None:
+    """Test save_external generates UUID on first call."""
 
     class Product(ExternalBaseModel):
         name: str
@@ -63,14 +63,14 @@ async def test_model_dump_generates_uuid_on_first_call() -> None:
     product = Product(name="Widget", price=9.99)
     assert product._external_id is None
 
-    result = await product.model_dump()
+    result = await product.save_external()
 
     assert product._external_id is not None
     assert result["id"] == str(product._external_id)
 
 
-async def test_model_dump_returns_same_id_on_repeated_calls() -> None:
-    """Test model_dump returns same id on repeated calls."""
+async def test_save_external_returns_same_id_on_repeated_calls() -> None:
+    """Test save_external returns same id on repeated calls."""
 
     class Document(ExternalBaseModel):
         title: str
@@ -78,15 +78,15 @@ async def test_model_dump_returns_same_id_on_repeated_calls() -> None:
         model_config = ExternalConfigDict(storage="postgresql://localhost:5432/test")
 
     doc = Document(title="Test", content="Content")
-    result1 = await doc.model_dump()
-    result2 = await doc.model_dump()
+    result1 = await doc.save_external()
+    result2 = await doc.save_external()
 
     assert result1["id"] == result2["id"]
     assert result1["class_name"] == result2["class_name"]
 
 
-async def test_model_dump_json_returns_json_string_of_reference() -> None:
-    """Test model_dump_json returns JSON string of reference."""
+async def test_save_external_reference_can_be_serialized_to_json() -> None:
+    """Test save_external reference can be serialized to JSON."""
     import json
 
     class Order(ExternalBaseModel):
@@ -95,7 +95,8 @@ async def test_model_dump_json_returns_json_string_of_reference() -> None:
         model_config = ExternalConfigDict(storage="redis://localhost:6379/0")
 
     order = Order(product="Book", quantity=3)
-    result_json = await order.model_dump_json()
+    reference = await order.save_external()
+    result_json = json.dumps(reference)
 
     result_dict = json.loads(result_json)
     assert "class_name" in result_dict
@@ -103,8 +104,8 @@ async def test_model_dump_json_returns_json_string_of_reference() -> None:
     assert result_dict["class_name"] == "Order"
 
 
-async def test_model_validate_restores_full_model_from_reference() -> None:
-    """Test model_validate restores full model from reference."""
+def test_legacy_model_validate_still_works_for_regular_data() -> None:
+    """Test model_validate still works for regular data (not external references)."""
 
     class UserProfile(ExternalBaseModel):
         name: str
@@ -112,19 +113,133 @@ async def test_model_validate_restores_full_model_from_reference() -> None:
         age: int
         model_config = ExternalConfigDict(storage="postgresql://localhost:5432/test")
 
-    original = UserProfile(name="Alice", email="alice@example.com", age=30)
-    reference = await original.model_dump()
+    data = {"name": "Alice", "email": "alice@example.com", "age": 30}
 
-    restored = await UserProfile.model_validate(reference)
+    user = UserProfile.model_validate(data)
 
-    assert restored.name == "Alice"
-    assert restored.email == "alice@example.com"
-    assert restored.age == 30
-    assert str(restored._external_id) == reference["id"]
+    assert user.name == "Alice"
+    assert user.email == "alice@example.com"
+    assert user.age == 30
 
 
-async def test_model_validate_json_restores_from_json_reference() -> None:
-    """Test model_validate_json restores from JSON reference."""
+def test_legacy_model_validate_json_still_works_for_regular_data() -> None:
+    """Test model_validate_json still works for regular JSON data."""
+    import json
+
+    class Product(ExternalBaseModel):
+        name: str
+        price: float
+        in_stock: bool
+        model_config = ExternalConfigDict(storage="redis://localhost:6379/0")
+
+    data = {"name": "Widget", "price": 19.99, "in_stock": True}
+    json_str = json.dumps(data)
+
+    restored = Product.model_validate_json(json_str)
+
+    assert restored.name == "Widget"
+    assert restored.price == 19.99
+    assert restored.in_stock is True
+
+
+def test_model_dump_returns_dict_synchronously() -> None:
+    """Test model_dump returns dict synchronously (standard pydantic behavior)."""
+
+    class User(ExternalBaseModel):
+        name: str
+        email: str
+        age: int
+        model_config = ExternalConfigDict(storage="postgresql://localhost:5432/test")
+
+    user = User(name="Alice", email="alice@example.com", age=30)
+    data = user.model_dump()
+
+    assert isinstance(data, dict)
+    assert data["name"] == "Alice"
+    assert data["email"] == "alice@example.com"
+    assert data["age"] == 30
+    assert "class_name" not in data
+    assert "id" not in data
+
+
+def test_model_dump_json_returns_json_string_synchronously() -> None:
+    """Test model_dump_json returns JSON string synchronously (standard pydantic behavior)."""
+    import json
+
+    class Product(ExternalBaseModel):
+        name: str
+        price: float
+        model_config = ExternalConfigDict(storage="redis://localhost:6379/0")
+
+    product = Product(name="Widget", price=19.99)
+    json_str = product.model_dump_json()
+
+    assert isinstance(json_str, str)
+    parsed = json.loads(json_str)
+    assert parsed["name"] == "Widget"
+    assert parsed["price"] == 19.99
+    assert "class_name" not in parsed
+    assert "id" not in parsed
+
+
+def test_model_validate_creates_instance_synchronously() -> None:
+    """Test model_validate creates instance synchronously (standard pydantic behavior)."""
+
+    class Order(ExternalBaseModel):
+        product: str
+        quantity: int
+        total: float
+        model_config = ExternalConfigDict(storage="postgresql://localhost:5432/test")
+
+    data = {"product": "Book", "quantity": 3, "total": 45.99}
+    order = Order.model_validate(data)
+
+    assert isinstance(order, Order)
+    assert order.product == "Book"
+    assert order.quantity == 3
+    assert order.total == 45.99
+
+
+def test_model_validate_json_creates_instance_synchronously() -> None:
+    """Test model_validate_json creates instance synchronously (standard pydantic behavior)."""
+    import json
+
+    class Document(ExternalBaseModel):
+        title: str
+        content: str
+        author: str
+        model_config = ExternalConfigDict(storage="redis://localhost:6379/0")
+
+    data = {"title": "Test Doc", "content": "Content here", "author": "Alice"}
+    json_str = json.dumps(data)
+    doc = Document.model_validate_json(json_str)
+
+    assert isinstance(doc, Document)
+    assert doc.title == "Test Doc"
+    assert doc.content == "Content here"
+    assert doc.author == "Alice"
+
+
+async def test_save_external_persists_and_returns_reference() -> None:
+    """Test save_external persists to storage and returns reference."""
+
+    class UserProfile(ExternalBaseModel):
+        name: str
+        email: str
+        age: int
+        model_config = ExternalConfigDict(storage="postgresql://localhost:5432/test")
+
+    user = UserProfile(name="Alice", email="alice@example.com", age=30)
+    ref = await user.save_external()
+
+    assert "class_name" in ref
+    assert "id" in ref
+    assert ref["class_name"] == "UserProfile"
+    assert isinstance(ref["id"], str)
+
+
+async def test_load_external_restores_model_from_reference() -> None:
+    """Test load_external restores model from reference."""
 
     class Product(ExternalBaseModel):
         name: str
@@ -133,36 +248,53 @@ async def test_model_validate_json_restores_from_json_reference() -> None:
         model_config = ExternalConfigDict(storage="redis://localhost:6379/0")
 
     original = Product(name="Widget", price=19.99, in_stock=True)
-    reference_json = await original.model_dump_json()
+    ref = await original.save_external()
 
-    restored = await Product.model_validate_json(reference_json)
+    restored = await Product.load_external(ref)
 
     assert restored.name == "Widget"
     assert restored.price == 19.99
     assert restored.in_stock is True
 
 
-async def test_record_not_found_error_for_nonexistent_uuid() -> None:
-    """Test RecordNotFoundError for nonexistent UUID."""
+async def test_save_load_external_roundtrip_preserves_data() -> None:
+    """Test save_external + load_external roundtrip preserves data."""
+
+    class Order(ExternalBaseModel):
+        product: str
+        quantity: int
+        total: float
+        customer: str
+        model_config = ExternalConfigDict(storage="postgresql://localhost:5432/test")
+
+    original = Order(product="Book", quantity=3, total=45.99, customer="Bob")
+    ref = await original.save_external()
+
+    restored = await Order.load_external(ref)
+
+    assert restored.product == original.product
+    assert restored.quantity == original.quantity
+    assert restored.total == original.total
+    assert restored.customer == original.customer
+    assert str(restored._external_id) == ref["id"]
+
+
+async def test_load_external_raises_not_found_for_invalid_id() -> None:
+    """Test load_external raises RecordNotFoundError for invalid id."""
 
     class Document(ExternalBaseModel):
         title: str
         content: str
         model_config = ExternalConfigDict(storage="postgresql://localhost:5432/test")
 
-    with pytest.raises(RecordNotFoundError) as exc_info:
-        await Document.model_validate(
-            {
-                "class_name": "Document",
-                "id": "00000000-0000-0000-0000-000000000000",
-            }
-        )
+    ref = {"class_name": "Document", "id": "00000000-0000-0000-0000-000000000000"}
 
-    assert "00000000-0000-0000-0000-000000000000" in str(exc_info.value)
+    with pytest.raises(RecordNotFoundError):
+        await Document.load_external(ref)
 
 
-async def test_storage_validation_error_for_class_name_mismatch() -> None:
-    """Test StorageValidationError for class_name mismatch."""
+async def test_load_external_raises_validation_error_for_class_mismatch() -> None:
+    """Test load_external raises StorageValidationError for class mismatch."""
 
     class UserProfile(ExternalBaseModel):
         name: str
@@ -173,7 +305,69 @@ async def test_storage_validation_error_for_class_name_mismatch() -> None:
         model_config = ExternalConfigDict(storage="postgresql://localhost:5432/test")
 
     user = UserProfile(name="Alice")
-    reference = await user.model_dump()
+    ref = await user.save_external()
 
     with pytest.raises(StorageValidationError, match="class_name.*mismatch"):
-        await Product.model_validate(reference)
+        await Product.load_external(ref)
+
+
+def test_save_external_sync_works_in_sync_context() -> None:
+    """Test save_external_sync works in sync context."""
+
+    class User(ExternalBaseModel):
+        name: str
+        email: str
+        model_config = ExternalConfigDict(storage="postgresql://localhost:5432/test")
+
+    user = User(name="Alice", email="alice@example.com")
+    ref = user.save_external_sync()
+
+    assert "class_name" in ref
+    assert "id" in ref
+    assert ref["class_name"] == "User"
+    assert isinstance(ref["id"], str)
+
+
+def test_load_external_sync_works_in_sync_context() -> None:
+    """Test load_external_sync works in sync context."""
+
+    class Product(ExternalBaseModel):
+        name: str
+        price: float
+        model_config = ExternalConfigDict(storage="redis://localhost:6379/0")
+
+    original = Product(name="Widget", price=19.99)
+    ref = original.save_external_sync()
+
+    restored = Product.load_external_sync(ref)
+
+    assert restored.name == "Widget"
+    assert restored.price == 19.99
+
+
+async def test_save_external_sync_raises_error_in_async_context() -> None:
+    """Test save_external_sync raises RuntimeError in async context."""
+
+    class Order(ExternalBaseModel):
+        product: str
+        quantity: int
+        model_config = ExternalConfigDict(storage="postgresql://localhost:5432/test")
+
+    order = Order(product="Book", quantity=3)
+
+    with pytest.raises(RuntimeError, match="Cannot use sync storage methods inside async context"):
+        order.save_external_sync()
+
+
+async def test_load_external_sync_raises_error_in_async_context() -> None:
+    """Test load_external_sync raises RuntimeError in async context."""
+
+    class Document(ExternalBaseModel):
+        title: str
+        content: str
+        model_config = ExternalConfigDict(storage="redis://localhost:6379/0")
+
+    ref = {"class_name": "Document", "id": "550e8400-e29b-41d4-a716-446655440000"}
+
+    with pytest.raises(RuntimeError, match="Cannot use sync storage methods inside async context"):
+        Document.load_external_sync(ref)

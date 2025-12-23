@@ -1,7 +1,7 @@
 """pydantic-toast: External storage for Pydantic models."""
 
 from pydantic_toast.backends.base import StorageBackend
-from pydantic_toast.base import ExternalBaseModel, ExternalConfigDict
+from pydantic_toast.base import ExternalBaseModel, ExternalConfigDict, ExternalReference
 from pydantic_toast.exceptions import (
     ExternalStorageError,
     RecordNotFoundError,
@@ -13,6 +13,7 @@ from pydantic_toast.registry import register_backend
 __all__ = [
     "ExternalBaseModel",
     "ExternalConfigDict",
+    "ExternalReference",
     "StorageBackend",
     "ExternalStorageError",
     "StorageConnectionError",
