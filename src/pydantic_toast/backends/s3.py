@@ -1,4 +1,3 @@
-import contextlib
 import json
 from typing import Any
 from uuid import UUID
@@ -50,8 +49,10 @@ class S3Backend(StorageBackend):
             await self._client.head_bucket(Bucket=self._bucket)
         except Exception as e:
             if self._client_context is not None:
-                with contextlib.suppress(Exception):
+                try:
                     await self._client_context.__aexit__(None, None, None)
+                except Exception:
+                    pass
                 self._client = None
                 self._client_context = None
 
@@ -100,8 +101,7 @@ class S3Backend(StorageBackend):
             response = await self._client.get_object(Bucket=self._bucket, Key=key)
             async with response["Body"] as stream:
                 body = await stream.read()
-            result: dict[str, Any] = json.loads(body.decode("utf-8"))
-            return result
+            return json.loads(body.decode("utf-8"))
         except Exception as e:
             error_str = str(e)
             if "NoSuchKey" in error_str or "404" in error_str:

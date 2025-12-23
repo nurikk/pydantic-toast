@@ -1,5 +1,3 @@
-"""PostgreSQL storage backend using asyncpg."""
-
 import json
 from datetime import UTC, datetime
 from pathlib import Path
@@ -11,19 +9,12 @@ from pydantic_toast.exceptions import ExternalStorageError, StorageConnectionErr
 
 
 def _load_sql(filename: str) -> str:
-    """Load SQL query from file."""
     sql_dir = Path(__file__).parent / "sql"
     sql_file = sql_dir / filename
     return sql_file.read_text()
 
 
 class PostgreSQLBackend(StorageBackend):
-    """PostgreSQL storage backend using asyncpg.
-
-    Stores model data in a JSONB column for efficient querying.
-    Uses connection pooling for performance.
-    """
-
     def __init__(self, url: str) -> None:
         super().__init__(url)
         self._pool: Any = None
@@ -33,7 +24,6 @@ class PostgreSQLBackend(StorageBackend):
         self._sql_create_index = _load_sql("create_index.sql")
 
     async def connect(self) -> None:
-        """Initialize connection pool and create table if needed."""
         try:
             import asyncpg
         except ImportError as e:
@@ -54,13 +44,11 @@ class PostgreSQLBackend(StorageBackend):
             ) from e
 
     async def disconnect(self) -> None:
-        """Close connection pool."""
         if self._pool is not None:
             await self._pool.close()
             self._pool = None
 
     async def save(self, id: UUID, class_name: str, data: dict[str, Any]) -> None:
-        """Persist model data using UPSERT query."""
         if self._pool is None:
             raise StorageConnectionError("Not connected to PostgreSQL", url=self._url)
 
@@ -78,7 +66,6 @@ class PostgreSQLBackend(StorageBackend):
             raise ExternalStorageError(f"Failed to save record: {e}") from e
 
     async def load(self, id: UUID, class_name: str) -> dict[str, Any] | None:
-        """Retrieve model data from PostgreSQL."""
         if self._pool is None:
             raise StorageConnectionError("Not connected to PostgreSQL", url=self._url)
 
@@ -93,13 +80,12 @@ class PostgreSQLBackend(StorageBackend):
                     return None
                 data = row["data"]
                 if isinstance(data, str):
-                    return json.loads(data)  # type: ignore[no-any-return]
+                    return json.loads(data)
                 return dict(data)
         except Exception as e:
             raise ExternalStorageError(f"Failed to load record: {e}") from e
 
     async def _ensure_table(self) -> None:
-        """Create external_models table if it doesn't exist."""
         if self._pool is None:
             return
 

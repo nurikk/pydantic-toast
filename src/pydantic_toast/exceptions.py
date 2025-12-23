@@ -1,18 +1,12 @@
-"""Custom exception hierarchy for external storage errors."""
-
 from typing import Any
 from uuid import UUID
 
 
 class ExternalStorageError(Exception):
-    """Base exception for all external storage errors."""
-
     pass
 
 
 class StorageConnectionError(ExternalStorageError):
-    """Raised when storage backend connection fails or is lost."""
-
     def __init__(self, message: str, url: str | None = None, cause: Exception | None = None):
         self.url = self._sanitize_url(url) if url else None
         self.cause = cause
@@ -20,7 +14,6 @@ class StorageConnectionError(ExternalStorageError):
 
     @staticmethod
     def _sanitize_url(url: str) -> str:
-        """Remove credentials from URL for safe logging."""
         from urllib.parse import urlparse, urlunparse
 
         parsed = urlparse(url)
@@ -35,8 +28,6 @@ class StorageConnectionError(ExternalStorageError):
 
 
 class RecordNotFoundError(ExternalStorageError):
-    """Raised when attempting to load a record that doesn't exist."""
-
     def __init__(self, id: UUID, class_name: str):
         self.id = id
         self.class_name = class_name
@@ -47,8 +38,6 @@ class RecordNotFoundError(ExternalStorageError):
 
 
 class StorageValidationError(ExternalStorageError):
-    """Raised when storage configuration or data validation fails."""
-
     def __init__(self, message: str, expected: Any = None, actual: Any = None):
         self.expected = expected
         self.actual = actual
