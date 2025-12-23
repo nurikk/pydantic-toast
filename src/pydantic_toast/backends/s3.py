@@ -1,3 +1,4 @@
+import contextlib
 import json
 from typing import Any
 from uuid import UUID
@@ -49,10 +50,8 @@ class S3Backend(StorageBackend):
             await self._client.head_bucket(Bucket=self._bucket)
         except Exception as e:
             if self._client_context is not None:
-                try:
+                with contextlib.suppress(Exception):
                     await self._client_context.__aexit__(None, None, None)
-                except Exception:
-                    pass
                 self._client = None
                 self._client_context = None
 

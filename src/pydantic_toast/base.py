@@ -31,7 +31,7 @@ class ExternalConfigDict(ConfigDict, total=False):
     storage: str
 
 
-def _run_sync(coro: Coroutine[Any, Any, T]) -> T:
+def _run_sync[T](coro: Coroutine[Any, Any, T]) -> T:
     """Run coroutine synchronously with event loop detection.
 
     Args:

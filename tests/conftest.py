@@ -156,14 +156,14 @@ def s3_url(localstack_container: LocalStackContainer) -> str:
 
     os.environ["AWS_ENDPOINT_URL"] = endpoint_url
     os.environ["AWS_ACCESS_KEY_ID"] = "testing"
-    os.environ["AWS_SECRET_ACCESS_KEY"] = "testing"
+    os.environ["AWS_SECRET_ACCESS_KEY"] = "testing" # noqa: S105
     os.environ["AWS_DEFAULT_REGION"] = "us-east-1"
 
     s3_client = boto3.client(
         "s3",
         endpoint_url=endpoint_url,
         aws_access_key_id="testing",
-        aws_secret_access_key="testing",
+        aws_secret_access_key="testing", # noqa: S106
         region_name="us-east-1",
     )
     bucket_name = "test-pydantic-toast"

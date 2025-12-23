@@ -1,5 +1,5 @@
 def main():
-    print("Hello from pydantic-toast!")
+    pass
 
 
 if __name__ == "__main__":
