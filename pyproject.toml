@@ -65,3 +65,11 @@ addopts = [
     "--strict-markers",
     "--tb=short",
 ]
+
+[[tool.mypy.overrides]]
+module = "asyncpg"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "redis.*"
+ignore_missing_imports = true

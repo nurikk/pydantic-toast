@@ -6,7 +6,7 @@ from typing import Any, TypedDict
 from urllib.parse import urlparse
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, ConfigDict, PrivateAttr
+from pydantic import BaseModel, PrivateAttr
 
 from pydantic_toast.exceptions import RecordNotFoundError, StorageValidationError
 from pydantic_toast.registry import get_global_registry
@@ -52,10 +52,11 @@ class ExternalBaseModel(BaseModel):
                 f"{cls.__name__}: model_config with storage is required for ExternalBaseModel"
             )
 
-        storage_url = None
+        storage_url: str | None = None
         if isinstance(config, dict):
             storage_url = config.get("storage")
-        elif isinstance(config, ConfigDict):
+        else:
+            # Must be ConfigDict or similar object
             storage_url = getattr(config, "storage", None)
 
         if not storage_url:
@@ -80,20 +81,24 @@ class ExternalBaseModel(BaseModel):
         super().model_post_init(__context)
 
         config = self.model_config
-        if isinstance(config, dict):
-            self._storage_url = config.get("storage")
-        elif isinstance(config, ConfigDict):
+        # config can be dict or ConfigDict-like object
+        if hasattr(config, "get"):
+            self._storage_url = config.get("storage")  # type: ignore[assignment]
+        else:
             self._storage_url = getattr(config, "storage", None)
 
     @classmethod
-    async def model_validate(cls, obj: Any, **kwargs: Any) -> "ExternalBaseModel":
+    async def model_validate(  # type: ignore[override]
+        cls, obj: Any, **kwargs: Any
+    ) -> "ExternalBaseModel":
         """Validate object and restore from storage if it's an external reference."""
         if cls._is_external_reference(obj):
-            storage_url = None
+            storage_url: str | None = None
             config = getattr(cls, "model_config", None)
-            if isinstance(config, dict):
-                storage_url = config.get("storage")
-            elif isinstance(config, ConfigDict):
+            # config can be dict or ConfigDict-like object
+            if hasattr(config, "get"):
+                storage_url = config.get("storage")  # type: ignore[union-attr]
+            else:
                 storage_url = getattr(config, "storage", None)
 
             if storage_url is None:
@@ -106,7 +111,9 @@ class ExternalBaseModel(BaseModel):
         return super().model_validate(obj, **kwargs)
 
     @classmethod
-    async def model_validate_json(cls, json_data: str, **kwargs: Any) -> "ExternalBaseModel":
+    async def model_validate_json(  # type: ignore[override]
+        cls, json_data: str, **kwargs: Any
+    ) -> "ExternalBaseModel":
         """Validate JSON string and restore from storage if it's an external reference."""
         import json as json_module
 
@@ -152,11 +159,12 @@ class ExternalBaseModel(BaseModel):
             if stored_data is None:
                 raise RecordNotFoundError(id=external_id, class_name=class_name)
 
-            return stored_data.get("data", {})
+            data_field: dict[str, Any] = stored_data.get("data", {})
+            return data_field
         finally:
             await backend.disconnect()
 
-    async def model_dump(self, **kwargs: Any) -> dict[str, Any]:
+    async def model_dump(self, **kwargs: Any) -> dict[str, Any]:  # type: ignore[override]
         """Dump model to external reference format.
 
         Persists the model data to external storage and returns a lightweight
@@ -175,7 +183,7 @@ class ExternalBaseModel(BaseModel):
             "id": str(self._external_id),
         }
 
-    async def model_dump_json(self, **kwargs: Any) -> str:
+    async def model_dump_json(self, **kwargs: Any) -> str:  # type: ignore[override]
         """Dump model to external reference JSON string.
 
         Returns:

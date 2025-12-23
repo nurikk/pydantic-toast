@@ -32,7 +32,7 @@ class RedisBackend(StorageBackend):
             ) from e
 
         try:
-            self._client = await aioredis.from_url(self._url)
+            self._client = await aioredis.from_url(self._url)  # type: ignore[no-untyped-call]
             await self._client.ping()
         except Exception as e:
             raise StorageConnectionError(
@@ -69,7 +69,8 @@ class RedisBackend(StorageBackend):
             value = await self._client.get(key)
             if value is None:
                 return None
-            return json.loads(value)
+            result: dict[str, Any] = json.loads(value)
+            return result
         except Exception as e:
             raise ExternalStorageError(f"Failed to load record: {e}") from e
 
