@@ -323,7 +323,7 @@ class ExternalBaseModel(BaseModel):
         try:
             now = datetime.now(UTC)
 
-            data = super().model_dump()
+            data = super().model_dump(mode="json")
 
             stored_data = {
                 "data": data,

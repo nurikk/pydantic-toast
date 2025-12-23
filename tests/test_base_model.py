@@ -1,5 +1,10 @@
 """Tests for ExternalBaseModel and ExternalConfigDict."""
 
+from datetime import UTC, date, datetime, time, timedelta, timezone
+from decimal import Decimal
+from enum import Enum
+from uuid import UUID, uuid4
+
 import pytest
 
 from pydantic_toast import ExternalBaseModel, ExternalConfigDict
@@ -371,3 +376,388 @@ async def test_load_external_sync_raises_error_in_async_context() -> None:
 
     with pytest.raises(RuntimeError, match="Cannot use sync storage methods inside async context"):
         Document.load_external_sync(ref)
+
+
+async def test_model_with_uuid_field_roundtrip() -> None:
+    """Test model with UUID field saves and loads correctly."""
+
+    class Transaction(ExternalBaseModel):
+        correlation_id: UUID
+        amount: float
+        model_config = ExternalConfigDict(storage="postgresql://localhost:5432/test")
+
+    test_uuid = uuid4()
+    original = Transaction(correlation_id=test_uuid, amount=100.50)
+    ref = await original.save_external()
+
+    restored = await Transaction.load_external(ref)
+
+    assert restored.correlation_id == test_uuid
+    assert restored.amount == 100.50
+
+
+async def test_model_with_datetime_field_roundtrip() -> None:
+    """Test model with datetime field (timezone-aware) saves and loads correctly."""
+
+    class Event(ExternalBaseModel):
+        name: str
+        created_at: datetime
+        model_config = ExternalConfigDict(storage="redis://localhost:6379/0")
+
+    test_datetime = datetime(2024, 1, 15, 10, 30, 45, tzinfo=UTC)
+    original = Event(name="Conference", created_at=test_datetime)
+    ref = await original.save_external()
+
+    restored = await Event.load_external(ref)
+
+    assert restored.name == "Conference"
+    assert restored.created_at == test_datetime
+
+
+async def test_model_with_naive_datetime_field_roundtrip() -> None:
+    """Test model with naive datetime (no timezone) saves and loads correctly."""
+
+    class Log(ExternalBaseModel):
+        message: str
+        timestamp: datetime
+        model_config = ExternalConfigDict(storage="postgresql://localhost:5432/test")
+
+    naive_dt = datetime(2024, 3, 10, 14, 20, 0)
+    original = Log(message="System started", timestamp=naive_dt)
+    ref = await original.save_external()
+
+    restored = await Log.load_external(ref)
+
+    assert restored.message == "System started"
+    assert restored.timestamp == naive_dt
+
+
+async def test_model_with_date_field_roundtrip() -> None:
+    """Test model with date field saves and loads correctly."""
+
+    class Appointment(ExternalBaseModel):
+        patient_name: str
+        appointment_date: date
+        model_config = ExternalConfigDict(storage="redis://localhost:6379/0")
+
+    test_date = date(2024, 6, 15)
+    original = Appointment(patient_name="John Doe", appointment_date=test_date)
+    ref = await original.save_external()
+
+    restored = await Appointment.load_external(ref)
+
+    assert restored.patient_name == "John Doe"
+    assert restored.appointment_date == test_date
+
+
+async def test_model_with_time_field_roundtrip() -> None:
+    """Test model with time field saves and loads correctly."""
+
+    class Alarm(ExternalBaseModel):
+        label: str
+        alarm_time: time
+        model_config = ExternalConfigDict(storage="postgresql://localhost:5432/test")
+
+    test_time = time(7, 30, 0)
+    original = Alarm(label="Wake up", alarm_time=test_time)
+    ref = await original.save_external()
+
+    restored = await Alarm.load_external(ref)
+
+    assert restored.label == "Wake up"
+    assert restored.alarm_time == test_time
+
+
+async def test_model_with_decimal_field_roundtrip() -> None:
+    """Test model with Decimal field saves and loads correctly."""
+
+    class Invoice(ExternalBaseModel):
+        invoice_number: str
+        total: Decimal
+        tax: Decimal
+        model_config = ExternalConfigDict(storage="redis://localhost:6379/0")
+
+    original = Invoice(
+        invoice_number="INV-2024-001",
+        total=Decimal("1234.56"),
+        tax=Decimal("123.46"),
+    )
+    ref = await original.save_external()
+
+    restored = await Invoice.load_external(ref)
+
+    assert restored.invoice_number == "INV-2024-001"
+    assert restored.total == Decimal("1234.56")
+    assert restored.tax == Decimal("123.46")
+
+
+async def test_model_with_enum_field_roundtrip() -> None:
+    """Test model with Enum field saves and loads correctly."""
+
+    class Status(str, Enum):
+        ACTIVE = "active"
+        PENDING = "pending"
+        INACTIVE = "inactive"
+
+    class Account(ExternalBaseModel):
+        username: str
+        status: Status
+        model_config = ExternalConfigDict(storage="postgresql://localhost:5432/test")
+
+    original = Account(username="alice", status=Status.ACTIVE)
+    ref = await original.save_external()
+
+    restored = await Account.load_external(ref)
+
+    assert restored.username == "alice"
+    assert restored.status == Status.ACTIVE
+    assert isinstance(restored.status, Status)
+
+
+async def test_model_with_list_of_primitives_roundtrip() -> None:
+    """Test model with list of primitives saves and loads correctly."""
+
+    class Article(ExternalBaseModel):
+        title: str
+        tags: list[str]
+        view_counts: list[int]
+        model_config = ExternalConfigDict(storage="redis://localhost:6379/0")
+
+    original = Article(
+        title="Python Tips",
+        tags=["python", "programming", "tutorial"],
+        view_counts=[100, 250, 350],
+    )
+    ref = await original.save_external()
+
+    restored = await Article.load_external(ref)
+
+    assert restored.title == "Python Tips"
+    assert restored.tags == ["python", "programming", "tutorial"]
+    assert restored.view_counts == [100, 250, 350]
+
+
+async def test_model_with_dict_field_roundtrip() -> None:
+    """Test model with dict field saves and loads correctly."""
+
+    class Configuration(ExternalBaseModel):
+        app_name: str
+        settings: dict[str, str]
+        limits: dict[str, int]
+        model_config = ExternalConfigDict(storage="postgresql://localhost:5432/test")
+
+    original = Configuration(
+        app_name="MyApp",
+        settings={"theme": "dark", "language": "en"},
+        limits={"max_users": 1000, "max_requests": 5000},
+    )
+    ref = await original.save_external()
+
+    restored = await Configuration.load_external(ref)
+
+    assert restored.app_name == "MyApp"
+    assert restored.settings == {"theme": "dark", "language": "en"}
+    assert restored.limits == {"max_users": 1000, "max_requests": 5000}
+
+
+async def test_model_with_nested_model_roundtrip() -> None:
+    """Test model with nested Pydantic model saves and loads correctly."""
+    from pydantic import BaseModel
+
+    class Address(BaseModel):
+        street: str
+        city: str
+        zip_code: str
+
+    class Person(ExternalBaseModel):
+        name: str
+        age: int
+        address: Address
+        model_config = ExternalConfigDict(storage="redis://localhost:6379/0")
+
+    address = Address(street="123 Main St", city="Springfield", zip_code="12345")
+    original = Person(name="Alice", age=30, address=address)
+    ref = await original.save_external()
+
+    restored = await Person.load_external(ref)
+
+    assert restored.name == "Alice"
+    assert restored.age == 30
+    assert restored.address.street == "123 Main St"
+    assert restored.address.city == "Springfield"
+    assert restored.address.zip_code == "12345"
+
+
+async def test_model_with_optional_complex_types_roundtrip() -> None:
+    """Test model with optional complex types saves and loads correctly."""
+
+    class UserProfile(ExternalBaseModel):
+        username: str
+        last_login: datetime | None
+        parent_id: UUID | None
+        balance: Decimal | None
+        model_config = ExternalConfigDict(storage="postgresql://localhost:5432/test")
+
+    original_with_values = UserProfile(
+        username="alice",
+        last_login=datetime(2024, 1, 15, 10, 30, tzinfo=UTC),
+        parent_id=uuid4(),
+        balance=Decimal("99.99"),
+    )
+    ref1 = await original_with_values.save_external()
+    restored1 = await UserProfile.load_external(ref1)
+
+    assert restored1.username == "alice"
+    assert restored1.last_login == original_with_values.last_login
+    assert restored1.parent_id == original_with_values.parent_id
+    assert restored1.balance == Decimal("99.99")
+
+    original_with_nulls = UserProfile(
+        username="bob",
+        last_login=None,
+        parent_id=None,
+        balance=None,
+    )
+    ref2 = await original_with_nulls.save_external()
+    restored2 = await UserProfile.load_external(ref2)
+
+    assert restored2.username == "bob"
+    assert restored2.last_login is None
+    assert restored2.parent_id is None
+    assert restored2.balance is None
+
+
+async def test_model_with_all_complex_types_roundtrip() -> None:
+    """Test comprehensive model with all complex types in one roundtrip."""
+    from pydantic import BaseModel
+
+    class Priority(str, Enum):
+        LOW = "low"
+        MEDIUM = "medium"
+        HIGH = "high"
+
+    class Metadata(BaseModel):
+        version: int
+        author: str
+
+    class ComplexModel(ExternalBaseModel):
+        correlation_id: UUID
+        created_at: datetime
+        due_date: date
+        reminder_time: time
+        amount: Decimal
+        priority: Priority
+        tags: list[str]
+        attributes: dict[str, str]
+        metadata: Metadata
+        model_config = ExternalConfigDict(storage="redis://localhost:6379/0")
+
+    test_uuid = uuid4()
+    test_datetime = datetime(2024, 2, 20, 15, 45, 30, tzinfo=UTC)
+    test_date = date(2024, 3, 1)
+    test_time = time(9, 0, 0)
+
+    original = ComplexModel(
+        correlation_id=test_uuid,
+        created_at=test_datetime,
+        due_date=test_date,
+        reminder_time=test_time,
+        amount=Decimal("9999.99"),
+        priority=Priority.HIGH,
+        tags=["urgent", "important"],
+        attributes={"category": "finance", "department": "sales"},
+        metadata=Metadata(version=2, author="Alice"),
+    )
+    ref = await original.save_external()
+
+    restored = await ComplexModel.load_external(ref)
+
+    assert restored.correlation_id == test_uuid
+    assert restored.created_at == test_datetime
+    assert restored.due_date == test_date
+    assert restored.reminder_time == test_time
+    assert restored.amount == Decimal("9999.99")
+    assert restored.priority == Priority.HIGH
+    assert restored.tags == ["urgent", "important"]
+    assert restored.attributes == {"category": "finance", "department": "sales"}
+    assert restored.metadata.version == 2
+    assert restored.metadata.author == "Alice"
+
+
+async def test_model_with_list_of_complex_types_roundtrip() -> None:
+    """Test model with list of complex types saves and loads correctly."""
+
+    class Task(ExternalBaseModel):
+        name: str
+        due_dates: list[date]
+        identifiers: list[UUID]
+        amounts: list[Decimal]
+        model_config = ExternalConfigDict(storage="postgresql://localhost:5432/test")
+
+    original = Task(
+        name="Project Tasks",
+        due_dates=[date(2024, 1, 15), date(2024, 2, 20), date(2024, 3, 10)],
+        identifiers=[uuid4(), uuid4()],
+        amounts=[Decimal("100.00"), Decimal("200.50"), Decimal("300.75")],
+    )
+    ref = await original.save_external()
+
+    restored = await Task.load_external(ref)
+
+    assert restored.name == "Project Tasks"
+    assert restored.due_dates == original.due_dates
+    assert restored.identifiers == original.identifiers
+    assert restored.amounts == original.amounts
+
+
+async def test_model_with_nested_dict_and_list_structures_roundtrip() -> None:
+    """Test model with deeply nested dict and list structures."""
+
+    class DataContainer(ExternalBaseModel):
+        name: str
+        nested_data: dict[str, list[dict[str, int]]]
+        model_config = ExternalConfigDict(storage="redis://localhost:6379/0")
+
+    original = DataContainer(
+        name="Analytics",
+        nested_data={
+            "metrics": [
+                {"views": 100, "clicks": 10},
+                {"views": 200, "clicks": 25},
+            ],
+            "totals": [
+                {"sum": 500},
+            ],
+        },
+    )
+    ref = await original.save_external()
+
+    restored = await DataContainer.load_external(ref)
+
+    assert restored.name == "Analytics"
+    assert restored.nested_data == original.nested_data
+
+
+async def test_model_with_timezone_aware_datetime_preserves_timezone() -> None:
+    """Test that timezone-aware datetime preserves timezone information."""
+
+    class Event(ExternalBaseModel):
+        name: str
+        utc_time: datetime
+        local_time: datetime
+        model_config = ExternalConfigDict(storage="postgresql://localhost:5432/test")
+
+    utc_dt = datetime(2024, 5, 15, 10, 30, 0, tzinfo=UTC)
+    pst = timezone(offset=timedelta(hours=-8))
+    local_dt = datetime(2024, 5, 15, 2, 30, 0, tzinfo=pst)
+
+    original = Event(name="Meeting", utc_time=utc_dt, local_time=local_dt)
+    ref = await original.save_external()
+
+    restored = await Event.load_external(ref)
+
+    assert restored.name == "Meeting"
+    assert restored.utc_time == utc_dt
+    assert restored.local_time == local_dt
+    assert restored.utc_time.tzinfo == UTC
+    assert restored.local_time.tzinfo == pst

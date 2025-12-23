@@ -1,5 +1,6 @@
 """PostgreSQL storage backend using asyncpg."""
 
+import json
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -69,7 +70,7 @@ class PostgreSQLBackend(StorageBackend):
                     self._sql_upsert,
                     id,
                     class_name,
-                    data,
+                    json.dumps(data),
                     data.get("schema_version", 1),
                     datetime.now(UTC),
                 )
@@ -90,7 +91,10 @@ class PostgreSQLBackend(StorageBackend):
                 )
                 if row is None:
                     return None
-                return dict(row["data"])
+                data = row["data"]
+                if isinstance(data, str):
+                    return json.loads(data)
+                return dict(data)
         except Exception as e:
             raise ExternalStorageError(f"Failed to load record: {e}") from e
 
