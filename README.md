@@ -38,6 +38,9 @@ pip install pydantic-toast[postgresql]
 # With Redis support
 pip install pydantic-toast[redis]
 
+# With S3 support
+pip install pydantic-toast[s3]
+
 # All backends
 pip install pydantic-toast[all]
 ```
@@ -148,6 +151,30 @@ class Session(ExternalBaseModel):
 - Async support via redis-py
 - Custom key prefix support
 
+### S3
+
+Stores models as JSON objects in S3 buckets with key format: `{prefix}/{ClassName}/{uuid}.json`
+
+```python
+class Document(ExternalBaseModel):
+    content: str
+    metadata: dict
+    
+    model_config = ExternalConfigDict(
+        storage="s3://my-bucket/models"
+    )
+```
+
+**Features:**
+- Object storage for large models
+- Cross-region/cross-service access
+- Async support via aiobotocore
+- Custom endpoint support (LocalStack, MinIO)
+
+**Key format:**
+- With prefix: `models/Document/550e8400-e29b-41d4-a716-446655440000.json`
+- Without prefix: `Document/550e8400-e29b-41d4-a716-446655440000.json`
+
 ## Custom Backends
 
 Implement your own storage backend by subclassing `StorageBackend` and implementing 4 methods:
@@ -156,34 +183,40 @@ Implement your own storage backend by subclassing `StorageBackend` and implement
 from pydantic_toast import StorageBackend, register_backend
 from uuid import UUID
 from typing import Any
+from pathlib import Path
+from urllib.parse import urlparse
+import json
 
-class S3Backend(StorageBackend):
+class FileSystemBackend(StorageBackend):
     async def connect(self) -> None:
-        # Initialize S3 client
-        self.client = create_s3_client(self._url)
+        # Initialize base directory
+        self.base_path = Path(urlparse(self._url).path)
+        self.base_path.mkdir(parents=True, exist_ok=True)
     
     async def disconnect(self) -> None:
-        # Cleanup resources
-        await self.client.close()
+        # No cleanup needed for filesystem
+        pass
     
     async def save(self, id: UUID, class_name: str, data: dict[str, Any]) -> None:
-        # Save to S3 bucket
-        key = f"{class_name}/{id}.json"
-        await self.client.put_object(key, json.dumps(data))
+        # Save to file: /base/ClassName/uuid.json
+        path = self.base_path / class_name / f"{id}.json"
+        path.parent.mkdir(exist_ok=True)
+        path.write_text(json.dumps(data))
     
     async def load(self, id: UUID, class_name: str) -> dict[str, Any] | None:
-        # Load from S3 bucket
-        key = f"{class_name}/{id}.json"
-        obj = await self.client.get_object(key)
-        return json.loads(obj) if obj else None
+        # Load from file
+        path = self.base_path / class_name / f"{id}.json"
+        if not path.exists():
+            return None
+        return json.loads(path.read_text())
 
 # Register the backend
-register_backend("s3", S3Backend)
+register_backend("file", FileSystemBackend)
 
 # Use it
 class Document(ExternalBaseModel):
     content: str
-    model_config = ExternalConfigDict(storage="s3://my-bucket/models")
+    model_config = ExternalConfigDict(storage="file:///tmp/models")
 ```
 
 ## API Reference
