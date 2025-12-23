@@ -1,6 +1,5 @@
 """Tests for PostgreSQL storage backend."""
 
-import os
 from uuid import uuid4
 
 import pytest
@@ -8,17 +7,6 @@ import pytest
 from pydantic_toast import ExternalBaseModel, ExternalConfigDict
 from pydantic_toast.backends.postgresql import PostgreSQLBackend
 from pydantic_toast.exceptions import StorageConnectionError
-
-pytestmark = pytest.mark.skipif(
-    "POSTGRES_URL" not in os.environ,
-    reason="PostgreSQL not available. Set POSTGRES_URL environment variable to run these tests.",
-)
-
-
-@pytest.fixture
-def postgres_url() -> str:
-    """Get PostgreSQL connection URL from environment."""
-    return os.environ.get("POSTGRES_URL", "postgresql://postgres:postgres@localhost:5432/test")
 
 
 @pytest.fixture

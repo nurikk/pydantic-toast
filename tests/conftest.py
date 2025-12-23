@@ -1,11 +1,15 @@
 """Test fixtures for pydantic-toast tests."""
 
 import asyncio
-from collections.abc import AsyncGenerator
+import os
+from collections.abc import AsyncGenerator, Generator
 from typing import Any
 from uuid import UUID
 
 import pytest
+from testcontainers.core.container import DockerClient
+from testcontainers.postgres import PostgresContainer
+from testcontainers.redis import RedisContainer
 
 from pydantic_toast.backends.base import StorageBackend
 from pydantic_toast.registry import get_global_registry
@@ -65,3 +69,57 @@ async def mock_storage() -> AsyncGenerator[dict[str, Any]]:
     storage: dict[str, Any] = {}
     yield storage
     storage.clear()
+
+
+@pytest.fixture(scope="session", autouse=True)
+def check_docker_available() -> None:
+    """Check if Docker is available for testcontainers.
+
+    Skips all tests if Docker is not running.
+    """
+    try:
+        DockerClient().client.ping()
+    except Exception as e:
+        pytest.skip(f"Docker not available: {e}. Install and start Docker to run tests.")
+
+
+@pytest.fixture(scope="session")
+def postgres_container() -> Generator[PostgresContainer, None, None]:
+    """Provide PostgreSQL 16 container for testing.
+
+    Container is started once per test session and shared across all tests.
+    """
+    container = PostgresContainer("postgres:16")
+    container.start()
+    yield container
+    container.stop()
+
+
+@pytest.fixture(scope="session")
+def postgres_url(postgres_container: PostgresContainer) -> str:
+    """Get PostgreSQL connection URL from container.
+
+    Returns URL without driver for asyncpg compatibility.
+    """
+    url: str = postgres_container.get_connection_url(driver=None)
+    return url
+
+
+@pytest.fixture(scope="session")
+def redis_container() -> Generator[RedisContainer, None, None]:
+    """Provide Redis 7 container for testing.
+
+    Container is started once per test session and shared across all tests.
+    """
+    container = RedisContainer("redis:7")
+    container.start()
+    yield container
+    container.stop()
+
+
+@pytest.fixture(scope="session")
+def redis_url(redis_container: RedisContainer) -> str:
+    """Get Redis connection URL from container."""
+    host = redis_container.get_container_host_ip()
+    port = redis_container.get_exposed_port(6379)
+    return f"redis://{host}:{port}/0"

@@ -1,6 +1,5 @@
 """Tests for Redis storage backend."""
 
-import os
 from uuid import uuid4
 
 import pytest
@@ -9,32 +8,15 @@ from pydantic_toast import ExternalBaseModel, ExternalConfigDict
 from pydantic_toast.backends.redis import RedisBackend
 from pydantic_toast.exceptions import StorageConnectionError
 
-pytestmark = pytest.mark.skipif(
-    "REDIS_URL" not in os.environ,
-    reason="Redis not available. Set REDIS_URL environment variable to run these tests.",
-)
-
-
-@pytest.fixture
-def redis_url() -> str:
-    """Get Redis connection URL from environment."""
-    return os.environ.get("REDIS_URL", "redis://localhost:6379/0")
-
 
 @pytest.fixture
 async def redis_backend(redis_url: str) -> RedisBackend:
     """Create and connect a Redis backend for testing."""
     backend = RedisBackend(redis_url)
     await backend.connect()
-
-    if backend._client:
-        await backend._client.flushdb()
-
+    await backend._client.flushdb()
     yield backend
-
-    if backend._client:
-        await backend._client.flushdb()
-
+    await backend._client.flushdb()
     await backend.disconnect()
 
 
@@ -103,9 +85,7 @@ async def test_full_round_trip_with_redis_backend(redis_url: str) -> None:
 
     backend = RedisBackend(redis_url)
     await backend.connect()
-
-    if backend._client:
-        await backend._client.flushdb()
+    await backend._client.flushdb()
 
     original = Product(name="Laptop", price=999.99, in_stock=True, category="Electronics")
 
@@ -121,9 +101,7 @@ async def test_full_round_trip_with_redis_backend(redis_url: str) -> None:
     assert restored.category == "Electronics"
     assert str(restored._external_id) == reference["id"]
 
-    if backend._client:
-        await backend._client.flushdb()
-
+    await backend._client.flushdb()
     await backend.disconnect()
 
 
