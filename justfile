@@ -1,5 +1,26 @@
+set dotenv-load
+
+# Default recipe to run when just is called without arguments
+default:
+    @just --list
+
+test test_file_or_dir="--durations=5 -n 4 tests":
+   uv run pytest --cov=src --cov-report term-missing:skip-covered {{test_file_or_dir}}
+
+typecheck:
+    uv run ty check
+
+format:
+    uv run ruff check --fix .
+    uv run ruff format .
 
 check: format typecheck test
+
+seed *tables:
+ cd src && python -m tools.seed {{tables}}
+
+run:
+ cd src && exec python -m backend.main
 
 # Bump git tag version (major, minor, or patch)
 tag-bump type="patch":
