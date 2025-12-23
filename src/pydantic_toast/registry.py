@@ -112,5 +112,12 @@ def _register_builtin_backends() -> None:
     except ImportError:
         pass
 
+    try:
+        from pydantic_toast.backends.s3 import S3Backend
+
+        registry.register("s3", S3Backend)
+    except ImportError:
+        pass
+
 
 _register_builtin_backends()

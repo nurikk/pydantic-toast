@@ -10,13 +10,15 @@ import pytest
 from pydantic_toast import ExternalBaseModel, ExternalConfigDict
 from pydantic_toast.exceptions import RecordNotFoundError, StorageValidationError
 
+pytestmark = pytest.mark.usefixtures("register_test_backend")
+
 
 def test_external_config_dict_with_valid_storage_url() -> None:
     """Test ExternalConfigDict creation with valid storage URL."""
 
     class TestModel(ExternalBaseModel):
         name: str
-        model_config = ExternalConfigDict(storage="postgresql://localhost:5432/test")
+        model_config = ExternalConfigDict(storage="test://memory")
 
     model = TestModel(name="test")
     assert model.name == "test"
@@ -46,7 +48,7 @@ async def test_save_external_returns_class_name_and_id_format() -> None:
     class UserProfile(ExternalBaseModel):
         name: str
         email: str
-        model_config = ExternalConfigDict(storage="postgresql://localhost:5432/test")
+        model_config = ExternalConfigDict(storage="test://memory")
 
     user = UserProfile(name="Alice", email="alice@example.com")
     result = await user.save_external()
@@ -63,7 +65,7 @@ async def test_save_external_generates_uuid_on_first_call() -> None:
     class Product(ExternalBaseModel):
         name: str
         price: float
-        model_config = ExternalConfigDict(storage="redis://localhost:6379/0")
+        model_config = ExternalConfigDict(storage="test://memory")
 
     product = Product(name="Widget", price=9.99)
     assert product._external_id is None
@@ -80,7 +82,7 @@ async def test_save_external_returns_same_id_on_repeated_calls() -> None:
     class Document(ExternalBaseModel):
         title: str
         content: str
-        model_config = ExternalConfigDict(storage="postgresql://localhost:5432/test")
+        model_config = ExternalConfigDict(storage="test://memory")
 
     doc = Document(title="Test", content="Content")
     result1 = await doc.save_external()
@@ -97,7 +99,7 @@ async def test_save_external_reference_can_be_serialized_to_json() -> None:
     class Order(ExternalBaseModel):
         product: str
         quantity: int
-        model_config = ExternalConfigDict(storage="redis://localhost:6379/0")
+        model_config = ExternalConfigDict(storage="test://memory")
 
     order = Order(product="Book", quantity=3)
     reference = await order.save_external()
@@ -116,7 +118,7 @@ def test_legacy_model_validate_still_works_for_regular_data() -> None:
         name: str
         email: str
         age: int
-        model_config = ExternalConfigDict(storage="postgresql://localhost:5432/test")
+        model_config = ExternalConfigDict(storage="test://memory")
 
     data = {"name": "Alice", "email": "alice@example.com", "age": 30}
 
@@ -135,7 +137,7 @@ def test_legacy_model_validate_json_still_works_for_regular_data() -> None:
         name: str
         price: float
         in_stock: bool
-        model_config = ExternalConfigDict(storage="redis://localhost:6379/0")
+        model_config = ExternalConfigDict(storage="test://memory")
 
     data = {"name": "Widget", "price": 19.99, "in_stock": True}
     json_str = json.dumps(data)
@@ -154,7 +156,7 @@ def test_model_dump_returns_dict_synchronously() -> None:
         name: str
         email: str
         age: int
-        model_config = ExternalConfigDict(storage="postgresql://localhost:5432/test")
+        model_config = ExternalConfigDict(storage="test://memory")
 
     user = User(name="Alice", email="alice@example.com", age=30)
     data = user.model_dump()
@@ -174,7 +176,7 @@ def test_model_dump_json_returns_json_string_synchronously() -> None:
     class Product(ExternalBaseModel):
         name: str
         price: float
-        model_config = ExternalConfigDict(storage="redis://localhost:6379/0")
+        model_config = ExternalConfigDict(storage="test://memory")
 
     product = Product(name="Widget", price=19.99)
     json_str = product.model_dump_json()
@@ -194,7 +196,7 @@ def test_model_validate_creates_instance_synchronously() -> None:
         product: str
         quantity: int
         total: float
-        model_config = ExternalConfigDict(storage="postgresql://localhost:5432/test")
+        model_config = ExternalConfigDict(storage="test://memory")
 
     data = {"product": "Book", "quantity": 3, "total": 45.99}
     order = Order.model_validate(data)
@@ -213,7 +215,7 @@ def test_model_validate_json_creates_instance_synchronously() -> None:
         title: str
         content: str
         author: str
-        model_config = ExternalConfigDict(storage="redis://localhost:6379/0")
+        model_config = ExternalConfigDict(storage="test://memory")
 
     data = {"title": "Test Doc", "content": "Content here", "author": "Alice"}
     json_str = json.dumps(data)
@@ -232,7 +234,7 @@ async def test_save_external_persists_and_returns_reference() -> None:
         name: str
         email: str
         age: int
-        model_config = ExternalConfigDict(storage="postgresql://localhost:5432/test")
+        model_config = ExternalConfigDict(storage="test://memory")
 
     user = UserProfile(name="Alice", email="alice@example.com", age=30)
     ref = await user.save_external()
@@ -250,7 +252,7 @@ async def test_load_external_restores_model_from_reference() -> None:
         name: str
         price: float
         in_stock: bool
-        model_config = ExternalConfigDict(storage="redis://localhost:6379/0")
+        model_config = ExternalConfigDict(storage="test://memory")
 
     original = Product(name="Widget", price=19.99, in_stock=True)
     ref = await original.save_external()
@@ -270,7 +272,7 @@ async def test_save_load_external_roundtrip_preserves_data() -> None:
         quantity: int
         total: float
         customer: str
-        model_config = ExternalConfigDict(storage="postgresql://localhost:5432/test")
+        model_config = ExternalConfigDict(storage="test://memory")
 
     original = Order(product="Book", quantity=3, total=45.99, customer="Bob")
     ref = await original.save_external()
@@ -290,7 +292,7 @@ async def test_load_external_raises_not_found_for_invalid_id() -> None:
     class Document(ExternalBaseModel):
         title: str
         content: str
-        model_config = ExternalConfigDict(storage="postgresql://localhost:5432/test")
+        model_config = ExternalConfigDict(storage="test://memory")
 
     ref = {"class_name": "Document", "id": "00000000-0000-0000-0000-000000000000"}
 
@@ -303,11 +305,11 @@ async def test_load_external_raises_validation_error_for_class_mismatch() -> Non
 
     class UserProfile(ExternalBaseModel):
         name: str
-        model_config = ExternalConfigDict(storage="postgresql://localhost:5432/test")
+        model_config = ExternalConfigDict(storage="test://memory")
 
     class Product(ExternalBaseModel):
         name: str
-        model_config = ExternalConfigDict(storage="postgresql://localhost:5432/test")
+        model_config = ExternalConfigDict(storage="test://memory")
 
     user = UserProfile(name="Alice")
     ref = await user.save_external()
@@ -322,7 +324,7 @@ def test_save_external_sync_works_in_sync_context() -> None:
     class User(ExternalBaseModel):
         name: str
         email: str
-        model_config = ExternalConfigDict(storage="postgresql://localhost:5432/test")
+        model_config = ExternalConfigDict(storage="test://memory")
 
     user = User(name="Alice", email="alice@example.com")
     ref = user.save_external_sync()
@@ -339,7 +341,7 @@ def test_load_external_sync_works_in_sync_context() -> None:
     class Product(ExternalBaseModel):
         name: str
         price: float
-        model_config = ExternalConfigDict(storage="redis://localhost:6379/0")
+        model_config = ExternalConfigDict(storage="test://memory")
 
     original = Product(name="Widget", price=19.99)
     ref = original.save_external_sync()
@@ -356,7 +358,7 @@ async def test_save_external_sync_raises_error_in_async_context() -> None:
     class Order(ExternalBaseModel):
         product: str
         quantity: int
-        model_config = ExternalConfigDict(storage="postgresql://localhost:5432/test")
+        model_config = ExternalConfigDict(storage="test://memory")
 
     order = Order(product="Book", quantity=3)
 
@@ -370,7 +372,7 @@ async def test_load_external_sync_raises_error_in_async_context() -> None:
     class Document(ExternalBaseModel):
         title: str
         content: str
-        model_config = ExternalConfigDict(storage="redis://localhost:6379/0")
+        model_config = ExternalConfigDict(storage="test://memory")
 
     ref = {"class_name": "Document", "id": "550e8400-e29b-41d4-a716-446655440000"}
 
@@ -384,7 +386,7 @@ async def test_model_with_uuid_field_roundtrip() -> None:
     class Transaction(ExternalBaseModel):
         correlation_id: UUID
         amount: float
-        model_config = ExternalConfigDict(storage="postgresql://localhost:5432/test")
+        model_config = ExternalConfigDict(storage="test://memory")
 
     test_uuid = uuid4()
     original = Transaction(correlation_id=test_uuid, amount=100.50)
@@ -402,7 +404,7 @@ async def test_model_with_datetime_field_roundtrip() -> None:
     class Event(ExternalBaseModel):
         name: str
         created_at: datetime
-        model_config = ExternalConfigDict(storage="redis://localhost:6379/0")
+        model_config = ExternalConfigDict(storage="test://memory")
 
     test_datetime = datetime(2024, 1, 15, 10, 30, 45, tzinfo=UTC)
     original = Event(name="Conference", created_at=test_datetime)
@@ -420,7 +422,7 @@ async def test_model_with_naive_datetime_field_roundtrip() -> None:
     class Log(ExternalBaseModel):
         message: str
         timestamp: datetime
-        model_config = ExternalConfigDict(storage="postgresql://localhost:5432/test")
+        model_config = ExternalConfigDict(storage="test://memory")
 
     naive_dt = datetime(2024, 3, 10, 14, 20, 0)
     original = Log(message="System started", timestamp=naive_dt)
@@ -438,7 +440,7 @@ async def test_model_with_date_field_roundtrip() -> None:
     class Appointment(ExternalBaseModel):
         patient_name: str
         appointment_date: date
-        model_config = ExternalConfigDict(storage="redis://localhost:6379/0")
+        model_config = ExternalConfigDict(storage="test://memory")
 
     test_date = date(2024, 6, 15)
     original = Appointment(patient_name="John Doe", appointment_date=test_date)
@@ -456,7 +458,7 @@ async def test_model_with_time_field_roundtrip() -> None:
     class Alarm(ExternalBaseModel):
         label: str
         alarm_time: time
-        model_config = ExternalConfigDict(storage="postgresql://localhost:5432/test")
+        model_config = ExternalConfigDict(storage="test://memory")
 
     test_time = time(7, 30, 0)
     original = Alarm(label="Wake up", alarm_time=test_time)
@@ -475,7 +477,7 @@ async def test_model_with_decimal_field_roundtrip() -> None:
         invoice_number: str
         total: Decimal
         tax: Decimal
-        model_config = ExternalConfigDict(storage="redis://localhost:6379/0")
+        model_config = ExternalConfigDict(storage="test://memory")
 
     original = Invoice(
         invoice_number="INV-2024-001",
@@ -502,7 +504,7 @@ async def test_model_with_enum_field_roundtrip() -> None:
     class Account(ExternalBaseModel):
         username: str
         status: Status
-        model_config = ExternalConfigDict(storage="postgresql://localhost:5432/test")
+        model_config = ExternalConfigDict(storage="test://memory")
 
     original = Account(username="alice", status=Status.ACTIVE)
     ref = await original.save_external()
@@ -521,7 +523,7 @@ async def test_model_with_list_of_primitives_roundtrip() -> None:
         title: str
         tags: list[str]
         view_counts: list[int]
-        model_config = ExternalConfigDict(storage="redis://localhost:6379/0")
+        model_config = ExternalConfigDict(storage="test://memory")
 
     original = Article(
         title="Python Tips",
@@ -544,7 +546,7 @@ async def test_model_with_dict_field_roundtrip() -> None:
         app_name: str
         settings: dict[str, str]
         limits: dict[str, int]
-        model_config = ExternalConfigDict(storage="postgresql://localhost:5432/test")
+        model_config = ExternalConfigDict(storage="test://memory")
 
     original = Configuration(
         app_name="MyApp",
@@ -573,7 +575,7 @@ async def test_model_with_nested_model_roundtrip() -> None:
         name: str
         age: int
         address: Address
-        model_config = ExternalConfigDict(storage="redis://localhost:6379/0")
+        model_config = ExternalConfigDict(storage="test://memory")
 
     address = Address(street="123 Main St", city="Springfield", zip_code="12345")
     original = Person(name="Alice", age=30, address=address)
@@ -596,7 +598,7 @@ async def test_model_with_optional_complex_types_roundtrip() -> None:
         last_login: datetime | None
         parent_id: UUID | None
         balance: Decimal | None
-        model_config = ExternalConfigDict(storage="postgresql://localhost:5432/test")
+        model_config = ExternalConfigDict(storage="test://memory")
 
     original_with_values = UserProfile(
         username="alice",
@@ -650,7 +652,7 @@ async def test_model_with_all_complex_types_roundtrip() -> None:
         tags: list[str]
         attributes: dict[str, str]
         metadata: Metadata
-        model_config = ExternalConfigDict(storage="redis://localhost:6379/0")
+        model_config = ExternalConfigDict(storage="test://memory")
 
     test_uuid = uuid4()
     test_datetime = datetime(2024, 2, 20, 15, 45, 30, tzinfo=UTC)
@@ -692,7 +694,7 @@ async def test_model_with_list_of_complex_types_roundtrip() -> None:
         due_dates: list[date]
         identifiers: list[UUID]
         amounts: list[Decimal]
-        model_config = ExternalConfigDict(storage="postgresql://localhost:5432/test")
+        model_config = ExternalConfigDict(storage="test://memory")
 
     original = Task(
         name="Project Tasks",
@@ -716,7 +718,7 @@ async def test_model_with_nested_dict_and_list_structures_roundtrip() -> None:
     class DataContainer(ExternalBaseModel):
         name: str
         nested_data: dict[str, list[dict[str, int]]]
-        model_config = ExternalConfigDict(storage="redis://localhost:6379/0")
+        model_config = ExternalConfigDict(storage="test://memory")
 
     original = DataContainer(
         name="Analytics",
@@ -745,7 +747,7 @@ async def test_model_with_timezone_aware_datetime_preserves_timezone() -> None:
         name: str
         utc_time: datetime
         local_time: datetime
-        model_config = ExternalConfigDict(storage="postgresql://localhost:5432/test")
+        model_config = ExternalConfigDict(storage="test://memory")
 
     utc_dt = datetime(2024, 5, 15, 10, 30, 0, tzinfo=UTC)
     pst = timezone(offset=timedelta(hours=-8))

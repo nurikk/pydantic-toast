@@ -11,11 +11,12 @@ dependencies = [
 [project.optional-dependencies]
 postgresql = ["asyncpg>=0.29.0"]
 redis = ["redis>=5.0.0"]
-all = ["asyncpg>=0.29.0", "redis>=5.0.0"]
+s3 = ["aiobotocore>=3.0.0"]
+all = ["asyncpg>=0.29.0", "redis>=5.0.0", "aiobotocore>=3.0.0"]
 dev = [
     "pytest>=8.0.0",
     "pytest-asyncio>=0.23.0",
-    "testcontainers[postgres,redis]>=4.0.0",
+    "testcontainers[postgres,redis,localstack]>=4.0.0",
     "ruff>=0.1.0",
     "mypy>=1.7.0",
 ]
@@ -77,4 +78,12 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = "testcontainers.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "aiobotocore.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "botocore.*"
 ignore_missing_imports = true
