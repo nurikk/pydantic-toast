@@ -9,11 +9,13 @@ from pydantic_toast.exceptions import (
     StorageValidationError,
 )
 from pydantic_toast.registry import register_backend
+from pydantic_toast.type_adapter import ExternalTypeAdapter
 
 __all__ = [
     "ExternalBaseModel",
     "ExternalConfigDict",
     "ExternalReference",
+    "ExternalTypeAdapter",
     "StorageBackend",
     "ExternalStorageError",
     "StorageConnectionError",
